@@ -1,5 +1,145 @@
 import "./style.css";
 
+// Game configuration - all magic numbers extracted here
+const CONFIG = {
+	// Player settings
+	player: {
+		baseSpeed: 4,
+		size: 6,
+		pulseAmount: 1.5,
+		pulseSpeed: 100,
+		directionIndicatorLength: 18,
+	},
+
+	// Guard settings
+	guard: {
+		size: 30,
+		alertDistance: 120,
+		alertIncreaseRate: 0.04,
+		alertDecreaseRate: 0.015,
+		chaseThreshold: 0.3,
+		spotlightRange: 100,
+		spotlightAngle: 0.5,
+		minSpawnDistance: 3, // multiplied by guard size
+	},
+
+	// Artwork settings
+	artwork: {
+		size: 50,
+		proximityGlowDistance: 150,
+		glowSpeed: 0.05,
+		collectionPadding: 8,
+	},
+
+	// Power-up settings
+	powerUp: {
+		size: 25,
+		bobSpeed: 3,
+		bobAmount: 5,
+		speedBoostMultiplier: 1.5,
+		speedBoostDuration: 5000,
+		invisibilityDuration: 180, // frames
+		magnetDuration: 300, // frames
+		magnetRange: 150,
+		magnetPullSpeed: 2,
+	},
+
+	// Laser settings
+	laser: {
+		minLength: 80,
+		lengthVariance: 60,
+		baseSpeed: 0.02,
+		speedVariance: 0.02,
+		hitWidth: 5,
+	},
+
+	// Combo system
+	combo: {
+		window: 2000, // ms
+		maxMultiplier: 5,
+		basePoints: 50,
+	},
+
+	// Spawn margins and positioning
+	spawn: {
+		margin: 50,
+		minX: 80,
+		guardMinX: 100,
+		powerUpMinX: 150,
+		laserMinX: 200,
+		maxAttempts: 50,
+	},
+
+	// Level progression
+	levels: {
+		baseGuards: 4,
+		baseArtworks: 3,
+		fastGuardMinLevel: 3,
+		fastGuardChance: 0.2,
+		stationaryGuardMinLevel: 5,
+		stationaryGuardChance: 0.15,
+		powerUpMinLevel: 2,
+		laserMinLevel: 4,
+		levelCompleteBonus: 100,
+	},
+
+	// Visual effects
+	effects: {
+		nearMissDistance: 25,
+		nearMissCooldown: 30,
+		slowMoDuration: 15,
+		slowMoTimeScale: 0.3,
+		caughtShakeIntensity: 15,
+		caughtShakeDuration: 40,
+		caughtFlashAlpha: 0.7,
+		caughtParticleCount: 40,
+		levelCompleteZoom: 1.1,
+		levelCompleteFlashAlpha: 0.4,
+		levelCompleteParticleCount: 30,
+		levelTransitionDuration: 60,
+		collectParticleBase: 25,
+		collectParticlePerCombo: 5,
+		vignetteBase: 0.3,
+		vignetteMaxDanger: 0.4,
+	},
+
+	// Audio settings
+	audio: {
+		musicBPM: 100,
+		bassVolume: 0.08,
+		highVolume: 0.03,
+		collectVolume: 0.15,
+		heartbeatMinInterval: 300,
+		heartbeatMaxInterval: 800,
+		heartbeatThreshold: 0.3,
+	},
+
+	// API settings
+	api: {
+		minArtworksPerStyle: 4,
+		pageCount: 10,
+		artworksPerPage: 100,
+		imageSize: 80,
+	},
+
+	// Background grid
+	background: {
+		gridSpacing: 80,
+		pillarSpacing: 200,
+		floorLines: 10,
+	},
+
+	// Toast notification
+	toast: {
+		duration: 2500,
+	},
+
+	// Danger level
+	danger: {
+		maxDistance: 150,
+	},
+} as const;
+
 // Type definitions
 interface PathPoint {
 	x: number;
@@ -154,12 +294,12 @@ const speedBtns = document.querySelectorAll(
 	".speed-btn",
 ) as NodeListOf<HTMLButtonElement>;
 
-// Constants
-const GUARD_SIZE = 30;
-const ARTWORK_SIZE = 50;
-const MIN_ARTWORKS_PER_STYLE = 4;
-const COMBO_WINDOW = 2000;
-const POWER_UP_SIZE = 25;
+// Constants derived from config
+const GUARD_SIZE = CONFIG.guard.size;
+const ARTWORK_SIZE = CONFIG.artwork.size;
+const MIN_ARTWORKS_PER_STYLE = CONFIG.api.minArtworksPerStyle;
+const COMBO_WINDOW = CONFIG.combo.window;
+const POWER_UP_SIZE = CONFIG.powerUp.size;
 
 // Guard types
 const GUARD_TYPES: Record<string, GuardTypeData> = {
@@ -183,8 +323,24 @@ function announce(message: string): void {
 let highScore = parseInt(localStorage.getItem("artHeistHighScore") || "0", 10);
 bestScoreEl.textContent = highScore.toString();
 
-// Speed multiplier (selected on title screen)
-let speedMultiplier = 1;
+// Speed multiplier (selected on title screen) - persist preference
+let speedMultiplier = parseInt(
+	localStorage.getItem("artHeistSpeed") || "1",
+	10,
+);
+
+// Initialize the speed button selection on load
+function initSpeedSelection(): void {
+	speedBtns.forEach((btn) => {
+		const btnSpeed = parseInt(btn.dataset.speed || "1", 10);
+		if (btnSpeed === speedMultiplier) {
+			btn.classList.add("selected");
+		} else {
+			btn.classList.remove("selected");
+		}
+	});
+}
+initSpeedSelection();
 
 function updateHighScore(score: number): boolean {
 	if (score > highScore) {
@@ -210,8 +366,8 @@ const gameState: GameState = {
 	gameStarted: false,
 	level: 1,
 	score: 0,
-	speed: 4,
-	baseSpeed: 4,
+	speed: CONFIG.player.baseSpeed,
+	baseSpeed: CONFIG.player.baseSpeed,
 	artworksLoaded: false,
 	currentStyle: null,
 	usedStyles: [],
@@ -270,7 +426,7 @@ function initAudio(): void {
 	}
 }
 
-// Background music using Web Audio API
+// Background music using Web Audio API - Synthwave style
 function startBackgroundMusic(): void {
 	if (!audioCtx || musicPlaying) return;
 	musicPlaying = true;
@@ -281,14 +437,28 @@ function startBackgroundMusic(): void {
 		duration: number,
 		type: OscillatorType = "sine",
 		volume = 0.05,
+		detune = 0,
 	): void {
 		if (!audioCtx) return;
 		const osc = audioCtx.createOscillator();
 		const gain = audioCtx.createGain();
-		osc.connect(gain);
+		const filter = audioCtx.createBiquadFilter();
+
+		osc.connect(filter);
+		filter.connect(gain);
 		gain.connect(audioCtx.destination);
+
 		osc.type = type;
 		osc.frequency.setValueAtTime(freq, startTime);
+		osc.detune.setValueAtTime(detune, startTime);
+
+		// Synthwave low-pass filter sweep
+		filter.type = "lowpass";
+		filter.frequency.setValueAtTime(800, startTime);
+		filter.frequency.linearRampToValueAtTime(2000, startTime + duration * 0.3);
+		filter.frequency.linearRampToValueAtTime(400, startTime + duration);
+		filter.Q.setValueAtTime(5, startTime);
+
 		gain.gain.setValueAtTime(0, startTime);
 		gain.gain.linearRampToValueAtTime(volume, startTime + 0.01);
 		gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
@@ -296,35 +466,76 @@ function startBackgroundMusic(): void {
 		osc.stop(startTime + duration);
 	}
 
+	// Arpeggiator function for that classic synthwave sound
+	function playArpeggio(
+		notes: number[],
+		startTime: number,
+		noteLength: number,
+	): void {
+		notes.forEach((note, i) => {
+			playNote(
+				note,
+				startTime + i * noteLength,
+				noteLength * 0.8,
+				"sawtooth",
+				0.04,
+				5,
+			);
+			// Add slight detuned layer for thickness
+			playNote(
+				note,
+				startTime + i * noteLength,
+				noteLength * 0.8,
+				"sawtooth",
+				0.02,
+				-5,
+			);
+		});
+	}
+
 	function playMusicLoop(): void {
 		if (!musicPlaying || !audioCtx) return;
 		const now = audioCtx.currentTime;
-		const bpm = 100;
+		const bpm = CONFIG.audio.musicBPM;
 		const beatDuration = 60 / bpm;
 
-		const bassNotes = [65.41, 73.42, 82.41, 73.42];
+		// Deep synth bass with slight portamento feel
+		const bassNotes = [55, 55, 73.42, 65.41]; // A1, A1, D2, C2
 		bassNotes.forEach((note, i) => {
 			playNote(
 				note,
 				now + i * beatDuration,
-				beatDuration * 0.8,
-				"triangle",
-				0.08,
+				beatDuration * 0.9,
+				"sawtooth",
+				CONFIG.audio.bassVolume,
+				0,
+			);
+			// Sub bass layer
+			playNote(
+				note / 2,
+				now + i * beatDuration,
+				beatDuration * 0.9,
+				"sine",
+				0.06,
+				0,
 			);
 		});
 
-		const highNotes = [261.63, 293.66, 329.63, 293.66];
-		highNotes.forEach((note, i) => {
-			if (i % 2 === 0) {
-				playNote(
-					note,
-					now + i * beatDuration + beatDuration / 2,
-					beatDuration * 0.3,
-					"sine",
-					0.03,
-				);
-			}
-		});
+		// Synthwave arpeggio pattern
+		const arpNotes = [220, 277.18, 329.63, 440, 329.63, 277.18]; // Am arpeggio
+		playArpeggio(arpNotes, now, beatDuration / 3);
+
+		// High synth stabs
+		if (Math.random() > 0.5) {
+			playNote(
+				880,
+				now + beatDuration * 2,
+				beatDuration * 0.2,
+				"square",
+				CONFIG.audio.highVolume,
+				10,
+			);
+		}
 
 		setTimeout(playMusicLoop, beatDuration * 4 * 1000);
 	}
@@ -335,7 +546,7 @@ function startBackgroundMusic(): void {
 function playHeartbeat(intensity: number): void {
 	if (!audioCtx) return;
 	const now = audioCtx.currentTime;
-	const volume = 0.1 + intensity * 0.2;
+	const volume = 0.1 + intensity * 0.2; // Heartbeat volume scales with danger
 
 	const lub = audioCtx.createOscillator();
 	const lubGain = audioCtx.createGain();
@@ -380,47 +591,73 @@ function playCollectSound(comboMultiplier = 1): void {
 	if (!audioCtx) return;
 
 	const now = audioCtx.currentTime;
-	const pitchMultiplier = 1 + (comboMultiplier - 1) * 0.1;
-	const frequencies = [
-		523.25 * pitchMultiplier,
-		659.25 * pitchMultiplier,
-		783.99 * pitchMultiplier,
-	];
+	const pitchMultiplier = 1 + (comboMultiplier - 1) * 0.15;
 
-	frequencies.forEach((freq, i) => {
-		if (!audioCtx) return;
-		const oscillator = audioCtx.createOscillator();
-		const gainNode = audioCtx.createGain();
+	// Futuristic "data acquired" sweep
+	const sweep = audioCtx.createOscillator();
+	const sweepGain = audioCtx.createGain();
+	const sweepFilter = audioCtx.createBiquadFilter();
 
-		oscillator.connect(gainNode);
-		gainNode.connect(audioCtx.destination);
+	sweep.connect(sweepFilter);
+	sweepFilter.connect(sweepGain);
+	sweepGain.connect(audioCtx.destination);
 
-		oscillator.type = "sine";
-		oscillator.frequency.setValueAtTime(freq, now);
+	sweep.type = "sawtooth";
+	sweep.frequency.setValueAtTime(200 * pitchMultiplier, now);
+	sweep.frequency.exponentialRampToValueAtTime(
+		1200 * pitchMultiplier,
+		now + 0.08,
+	);
+	sweep.frequency.exponentialRampToValueAtTime(
+		800 * pitchMultiplier,
+		now + 0.15,
+	);
 
-		const startTime = now + i * 0.05;
-		const duration = 0.15;
+	sweepFilter.type = "bandpass";
+	sweepFilter.frequency.setValueAtTime(1000, now);
+	sweepFilter.Q.setValueAtTime(2, now);
 
-		gainNode.gain.setValueAtTime(0, startTime);
-		gainNode.gain.linearRampToValueAtTime(0.15, startTime + 0.01);
-		gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+	sweepGain.gain.setValueAtTime(0, now);
+	sweepGain.gain.linearRampToValueAtTime(
+		CONFIG.audio.collectVolume,
+		now + 0.02,
+	);
+	sweepGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
-		oscillator.start(startTime);
-		oscillator.stop(startTime + duration);
-	});
+	sweep.start(now);
+	sweep.stop(now + 0.2);
 
+	// Digital blip confirmation
+	const blip = audioCtx.createOscillator();
+	const blipGain = audioCtx.createGain();
+	blip.connect(blipGain);
+	blipGain.connect(audioCtx.destination);
+	blip.type = "square";
+	blip.frequency.setValueAtTime(880 * pitchMultiplier, now + 0.05);
+	blipGain.gain.setValueAtTime(0, now + 0.05);
+	blipGain.gain.linearRampToValueAtTime(0.08, now + 0.06);
+	blipGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+	blip.start(now + 0.05);
+	blip.stop(now + 0.12);
+
+	// Combo bonus sparkle effect
 	if (comboMultiplier > 1 && audioCtx) {
-		const sparkle = audioCtx.createOscillator();
-		const sparkleGain = audioCtx.createGain();
-		sparkle.connect(sparkleGain);
-		sparkleGain.connect(audioCtx.destination);
-		sparkle.type = "sine";
-		sparkle.frequency.setValueAtTime(1318.5 * pitchMultiplier, now);
-		sparkleGain.gain.setValueAtTime(0, now + 0.1);
-		sparkleGain.gain.linearRampToValueAtTime(0.1, now + 0.12);
-		sparkleGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-		sparkle.start(now + 0.1);
-		sparkle.stop(now + 0.3);
+		for (let i = 0; i < Math.min(comboMultiplier, 4); i++) {
+			const sparkle = audioCtx.createOscillator();
+			const sparkleGain = audioCtx.createGain();
+			sparkle.connect(sparkleGain);
+			sparkleGain.connect(audioCtx.destination);
+			sparkle.type = "sine";
+			sparkle.frequency.setValueAtTime(1500 + i * 200, now + 0.1 + i * 0.03);
+			sparkleGain.gain.setValueAtTime(0, now + 0.1 + i * 0.03);
+			sparkleGain.gain.linearRampToValueAtTime(0.06, now + 0.12 + i * 0.03);
+			sparkleGain.gain.exponentialRampToValueAtTime(
+				0.001,
+				now + 0.25 + i * 0.03,
+			);
+			sparkle.start(now + 0.1 + i * 0.03);
+			sparkle.stop(now + 0.25 + i * 0.03);
+		}
 	}
 }
 
@@ -428,61 +665,138 @@ function playPowerUpSound(): void {
 	if (!audioCtx) return;
 	const now = audioCtx.currentTime;
 
-	const notes = [261.63, 329.63, 392.0, 523.25, 659.25];
-	notes.forEach((freq, i) => {
-		if (!audioCtx) return;
-		const osc = audioCtx.createOscillator();
-		const gain = audioCtx.createGain();
-		osc.connect(gain);
-		gain.connect(audioCtx.destination);
-		osc.type = "square";
-		osc.frequency.setValueAtTime(freq, now + i * 0.05);
-		gain.gain.setValueAtTime(0, now + i * 0.05);
-		gain.gain.linearRampToValueAtTime(0.1, now + i * 0.05 + 0.02);
-		gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.05 + 0.15);
-		osc.start(now + i * 0.05);
-		osc.stop(now + i * 0.05 + 0.15);
-	});
+	// Futuristic power-up charge sound
+	const charge = audioCtx.createOscillator();
+	const chargeGain = audioCtx.createGain();
+	const chargeFilter = audioCtx.createBiquadFilter();
+
+	charge.connect(chargeFilter);
+	chargeFilter.connect(chargeGain);
+	chargeGain.connect(audioCtx.destination);
+
+	charge.type = "sawtooth";
+	charge.frequency.setValueAtTime(100, now);
+	charge.frequency.exponentialRampToValueAtTime(2000, now + 0.3);
+
+	chargeFilter.type = "lowpass";
+	chargeFilter.frequency.setValueAtTime(500, now);
+	chargeFilter.frequency.exponentialRampToValueAtTime(4000, now + 0.3);
+	chargeFilter.Q.setValueAtTime(10, now);
+
+	chargeGain.gain.setValueAtTime(0, now);
+	chargeGain.gain.linearRampToValueAtTime(0.12, now + 0.1);
+	chargeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+	charge.start(now);
+	charge.stop(now + 0.35);
+
+	// Confirmation burst
+	const burst = audioCtx.createOscillator();
+	const burstGain = audioCtx.createGain();
+	burst.connect(burstGain);
+	burstGain.connect(audioCtx.destination);
+	burst.type = "sine";
+	burst.frequency.setValueAtTime(1200, now + 0.25);
+	burst.frequency.setValueAtTime(1600, now + 0.28);
+	burstGain.gain.setValueAtTime(0, now + 0.25);
+	burstGain.gain.linearRampToValueAtTime(0.15, now + 0.27);
+	burstGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+	burst.start(now + 0.25);
+	burst.stop(now + 0.4);
 }
 
 function playNearMissSound(): void {
 	if (!audioCtx) return;
 	const now = audioCtx.currentTime;
 
-	const osc = audioCtx.createOscillator();
-	const gain = audioCtx.createGain();
-	osc.connect(gain);
-	gain.connect(audioCtx.destination);
-	osc.type = "sawtooth";
-	osc.frequency.setValueAtTime(200, now);
-	osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
-	osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
-	gain.gain.setValueAtTime(0.1, now);
-	gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-	osc.start(now);
-	osc.stop(now + 0.2);
+	// Warning siren sweep
+	const siren = audioCtx.createOscillator();
+	const sirenGain = audioCtx.createGain();
+	const sirenFilter = audioCtx.createBiquadFilter();
+
+	siren.connect(sirenFilter);
+	sirenFilter.connect(sirenGain);
+	sirenGain.connect(audioCtx.destination);
+
+	siren.type = "sawtooth";
+	siren.frequency.setValueAtTime(400, now);
+	siren.frequency.linearRampToValueAtTime(1200, now + 0.08);
+	siren.frequency.linearRampToValueAtTime(300, now + 0.18);
+
+	sirenFilter.type = "bandpass";
+	sirenFilter.frequency.setValueAtTime(800, now);
+	sirenFilter.Q.setValueAtTime(3, now);
+
+	sirenGain.gain.setValueAtTime(0, now);
+	sirenGain.gain.linearRampToValueAtTime(0.12, now + 0.02);
+	sirenGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+	siren.start(now);
+	siren.stop(now + 0.2);
+
+	// Digital glitch noise
+	const noise = audioCtx.createOscillator();
+	const noiseGain = audioCtx.createGain();
+	noise.connect(noiseGain);
+	noiseGain.connect(audioCtx.destination);
+	noise.type = "square";
+	noise.frequency.setValueAtTime(60, now + 0.05);
+	noiseGain.gain.setValueAtTime(0.08, now + 0.05);
+	noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+	noise.start(now + 0.05);
+	noise.stop(now + 0.1);
 }
 
 function playLevelCompleteSound(): void {
 	if (!audioCtx) return;
 	const now = audioCtx.currentTime;
 
-	const notes = [392.0, 493.88, 587.33, 783.99];
+	// Triumphant synth fanfare
+	const notes = [440, 554.37, 659.25, 880]; // A4 C#5 E5 A5
 	notes.forEach((freq, i) => {
 		if (!audioCtx) return;
 		const osc = audioCtx.createOscillator();
+		const osc2 = audioCtx.createOscillator();
 		const gain = audioCtx.createGain();
-		osc.connect(gain);
+		const filter = audioCtx.createBiquadFilter();
+
+		osc.connect(filter);
+		osc2.connect(filter);
+		filter.connect(gain);
 		gain.connect(audioCtx.destination);
-		osc.type = "square";
-		osc.frequency.setValueAtTime(freq, now + i * 0.15);
-		gain.gain.setValueAtTime(0, now + i * 0.15);
-		gain.gain.linearRampToValueAtTime(0.15, now + i * 0.15 + 0.02);
-		gain.gain.setValueAtTime(0.15, now + i * 0.15 + 0.1);
-		gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.15 + 0.3);
-		osc.start(now + i * 0.15);
-		osc.stop(now + i * 0.15 + 0.3);
+
+		osc.type = "sawtooth";
+		osc2.type = "sawtooth";
+		osc.frequency.setValueAtTime(freq, now + i * 0.12);
+		osc2.frequency.setValueAtTime(freq * 1.005, now + i * 0.12); // Slight detune
+
+		filter.type = "lowpass";
+		filter.frequency.setValueAtTime(2000, now + i * 0.12);
+		filter.Q.setValueAtTime(2, now + i * 0.12);
+
+		gain.gain.setValueAtTime(0, now + i * 0.12);
+		gain.gain.linearRampToValueAtTime(0.1, now + i * 0.12 + 0.02);
+		gain.gain.setValueAtTime(0.1, now + i * 0.12 + 0.15);
+		gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.4);
+
+		osc.start(now + i * 0.12);
+		osc2.start(now + i * 0.12);
+		osc.stop(now + i * 0.12 + 0.4);
+		osc2.stop(now + i * 0.12 + 0.4);
 	});
+
+	// Success chime
+	const chime = audioCtx.createOscillator();
+	const chimeGain = audioCtx.createGain();
+	chime.connect(chimeGain);
+	chimeGain.connect(audioCtx.destination);
+	chime.type = "sine";
+	chime.frequency.setValueAtTime(1760, now + 0.5);
+	chimeGain.gain.setValueAtTime(0, now + 0.5);
+	chimeGain.gain.linearRampToValueAtTime(0.12, now + 0.52);
+	chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+	chime.start(now + 0.5);
+	chime.stop(now + 0.8);
 }
 
 function playCaughtSound(): void {
@@ -490,53 +804,58 @@ function playCaughtSound(): void {
 
 	const now = audioCtx.currentTime;
 
-	const oscillator = audioCtx.createOscillator();
-	const gainNode = audioCtx.createGain();
+	// System failure alarm
+	const alarm = audioCtx.createOscillator();
+	const alarmGain = audioCtx.createGain();
+	const alarmFilter = audioCtx.createBiquadFilter();
 
-	oscillator.connect(gainNode);
-	gainNode.connect(audioCtx.destination);
+	alarm.connect(alarmFilter);
+	alarmFilter.connect(alarmGain);
+	alarmGain.connect(audioCtx.destination);
 
-	oscillator.type = "sawtooth";
-	oscillator.frequency.setValueAtTime(400, now);
-	oscillator.frequency.exponentialRampToValueAtTime(100, now + 0.5);
+	alarm.type = "sawtooth";
+	alarm.frequency.setValueAtTime(600, now);
+	alarm.frequency.linearRampToValueAtTime(200, now + 0.15);
+	alarm.frequency.linearRampToValueAtTime(500, now + 0.3);
+	alarm.frequency.linearRampToValueAtTime(100, now + 0.5);
 
-	gainNode.gain.setValueAtTime(0.2, now);
-	gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+	alarmFilter.type = "lowpass";
+	alarmFilter.frequency.setValueAtTime(3000, now);
+	alarmFilter.frequency.exponentialRampToValueAtTime(300, now + 0.5);
 
-	oscillator.start(now);
-	oscillator.stop(now + 0.5);
+	alarmGain.gain.setValueAtTime(0, now);
+	alarmGain.gain.linearRampToValueAtTime(0.2, now + 0.02);
+	alarmGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
 
-	const osc2 = audioCtx.createOscillator();
-	const gain2 = audioCtx.createGain();
+	alarm.start(now);
+	alarm.stop(now + 0.5);
 
-	osc2.connect(gain2);
-	gain2.connect(audioCtx.destination);
+	// Digital distortion burst
+	const distort = audioCtx.createOscillator();
+	const distortGain = audioCtx.createGain();
+	distort.connect(distortGain);
+	distortGain.connect(audioCtx.destination);
+	distort.type = "square";
+	distort.frequency.setValueAtTime(80, now);
+	distort.frequency.setValueAtTime(120, now + 0.1);
+	distort.frequency.setValueAtTime(60, now + 0.2);
+	distortGain.gain.setValueAtTime(0.15, now);
+	distortGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+	distort.start(now);
+	distort.stop(now + 0.4);
 
-	osc2.type = "square";
-	osc2.frequency.setValueAtTime(300, now + 0.1);
-	osc2.frequency.exponentialRampToValueAtTime(80, now + 0.6);
-
-	gain2.gain.setValueAtTime(0.1, now + 0.1);
-	gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
-
-	osc2.start(now + 0.1);
-	osc2.stop(now + 0.6);
-
-	const thud = audioCtx.createOscillator();
-	const thudGain = audioCtx.createGain();
-
-	thud.connect(thudGain);
-	thudGain.connect(audioCtx.destination);
-
-	thud.type = "sine";
-	thud.frequency.setValueAtTime(80, now);
-	thud.frequency.exponentialRampToValueAtTime(40, now + 0.3);
-
-	thudGain.gain.setValueAtTime(0.3, now);
-	thudGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-
-	thud.start(now);
-	thud.stop(now + 0.3);
+	// Heavy bass impact
+	const impact = audioCtx.createOscillator();
+	const impactGain = audioCtx.createGain();
+	impact.connect(impactGain);
+	impactGain.connect(audioCtx.destination);
+	impact.type = "sine";
+	impact.frequency.setValueAtTime(60, now);
+	impact.frequency.exponentialRampToValueAtTime(20, now + 0.3);
+	impactGain.gain.setValueAtTime(0.35, now);
+	impactGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+	impact.start(now);
+	impact.stop(now + 0.35);
 }
 
 // Screen effects
@@ -1597,35 +1916,172 @@ function update(): void {
 
 // Parallax background layers
 const bgLayers: BgLayer[] = [
-	{ offset: 0, speed: 0.1, color: "#0a0a15" },
-	{ offset: 0, speed: 0.2, color: "#0f0f1f" },
-	{ offset: 0, speed: 0.3, color: "#141428" },
+	{ offset: 0, speed: 0.2, color: "rgba(0, 255, 255, 0.1)" },
+	{ offset: 0, speed: 0.4, color: "rgba(255, 0, 255, 0.08)" },
+	{ offset: 0, speed: 0.6, color: "rgba(0, 255, 255, 0.05)" },
 ];
 
 function drawBackground(): void {
-	for (const layer of bgLayers) {
-		layer.offset -= layer.speed;
-		if (layer.offset < -50) layer.offset = 0;
-	}
-
-	ctx.fillStyle = "#16213e";
+	// Dark base with gradient
+	const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+	gradient.addColorStop(0, "#050510");
+	gradient.addColorStop(0.5, "#0a0a18");
+	gradient.addColorStop(1, "#050510");
+	ctx.fillStyle = gradient;
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+	// Animated neon grid
 	for (const layer of bgLayers) {
-		ctx.strokeStyle = layer.color;
-		ctx.lineWidth = 1;
-		for (let x = layer.offset; x < canvas.width; x += 50) {
-			ctx.beginPath();
-			ctx.moveTo(x, 0);
-			ctx.lineTo(x, canvas.height);
-			ctx.stroke();
+		layer.offset -= layer.speed * speedMultiplier;
+		if (layer.offset < -80) layer.offset = 0;
+	}
+
+	// Vertical lines (cyan)
+	ctx.strokeStyle = "rgba(0, 255, 255, 0.15)";
+	ctx.lineWidth = 1;
+	for (let x = bgLayers[0].offset; x < canvas.width; x += 80) {
+		ctx.beginPath();
+		ctx.moveTo(x, 0);
+		ctx.lineTo(x, canvas.height);
+		ctx.stroke();
+	}
+
+	// Horizontal lines (magenta)
+	ctx.strokeStyle = "rgba(255, 0, 255, 0.1)";
+	for (let y = 0; y < canvas.height; y += 80) {
+		ctx.beginPath();
+		ctx.moveTo(0, y);
+		ctx.lineTo(canvas.width, y);
+		ctx.stroke();
+	}
+
+	// Museum floor perspective effect
+	ctx.strokeStyle = "rgba(0, 255, 255, 0.08)";
+	for (let i = 0; i < 10; i++) {
+		const y = canvas.height - 50 + i * 5;
+		ctx.beginPath();
+		ctx.moveTo(0, y);
+		ctx.lineTo(canvas.width, y);
+		ctx.stroke();
+	}
+
+	// Architectural pillars (decorative)
+	ctx.fillStyle = "rgba(0, 255, 255, 0.03)";
+	for (let x = 100; x < canvas.width; x += 200) {
+		ctx.fillRect(x - 10, 0, 20, canvas.height);
+	}
+}
+
+// Draw cyber guard as geometric robot
+function drawCyberGuard(
+	x: number,
+	y: number,
+	type: "normal" | "fast" | "stationary",
+	alertLevel: number,
+	spotlightAngle: number,
+): void {
+	const size = GUARD_SIZE;
+
+	// Spotlight for stationary guards
+	if (type === "stationary") {
+		const gradient = ctx.createRadialGradient(x, y, 0, x, y, 100);
+		gradient.addColorStop(0, `rgba(255, 255, 0, ${0.15 + alertLevel * 0.2})`);
+		gradient.addColorStop(1, "transparent");
+		ctx.fillStyle = gradient;
+		ctx.beginPath();
+		ctx.moveTo(x, y);
+		ctx.arc(x, y, 100, spotlightAngle - 0.5, spotlightAngle + 0.5);
+		ctx.closePath();
+		ctx.fill();
+	}
+
+	// Alert indicator
+	if (alertLevel > 0.3) {
+		ctx.fillStyle = `rgba(255, 0, 0, ${alertLevel})`;
+		ctx.shadowColor = "#ff0000";
+		ctx.shadowBlur = 20;
+		ctx.beginPath();
+		ctx.arc(x, y - size - 5, 6 + alertLevel * 4, 0, Math.PI * 2);
+		ctx.fill();
+
+		if (alertLevel > 0.7) {
+			ctx.fillStyle = "#fff";
+			ctx.font = "bold 12px Courier New";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText("!", x, y - size - 5);
 		}
-		for (let y = 0; y < canvas.height; y += 50) {
-			ctx.beginPath();
-			ctx.moveTo(0, y);
-			ctx.lineTo(canvas.width, y);
-			ctx.stroke();
+		ctx.shadowBlur = 0;
+	}
+
+	// Guard body color based on type
+	const bodyColor =
+		type === "fast" ? "#ff0066" : type === "stationary" ? "#ffff00" : "#00ffff";
+	const glowColor =
+		type === "fast"
+			? "rgba(255, 0, 102, 0.8)"
+			: type === "stationary"
+				? "rgba(255, 255, 0, 0.8)"
+				: "rgba(0, 255, 255, 0.8)";
+
+	// Outer glow
+	ctx.shadowColor = glowColor;
+	ctx.shadowBlur = 15 + alertLevel * 10;
+
+	// Hexagonal body
+	ctx.fillStyle = bodyColor;
+	ctx.beginPath();
+	for (let i = 0; i < 6; i++) {
+		const angle = (i * Math.PI) / 3 - Math.PI / 6;
+		const px = x + Math.cos(angle) * (size * 0.6);
+		const py = y + Math.sin(angle) * (size * 0.6);
+		if (i === 0) {
+			ctx.moveTo(px, py);
+		} else {
+			ctx.lineTo(px, py);
 		}
+	}
+	ctx.closePath();
+	ctx.fill();
+
+	// Inner dark core
+	ctx.shadowBlur = 0;
+	ctx.fillStyle = "#0a0a0f";
+	ctx.beginPath();
+	for (let i = 0; i < 6; i++) {
+		const angle = (i * Math.PI) / 3 - Math.PI / 6;
+		const px = x + Math.cos(angle) * (size * 0.4);
+		const py = y + Math.sin(angle) * (size * 0.4);
+		if (i === 0) {
+			ctx.moveTo(px, py);
+		} else {
+			ctx.lineTo(px, py);
+		}
+	}
+	ctx.closePath();
+	ctx.fill();
+
+	// Scanning eye
+	const eyePhase = Date.now() / 500;
+	const eyeX = x + Math.cos(eyePhase) * 3;
+	ctx.fillStyle = alertLevel > 0.5 ? "#ff0000" : bodyColor;
+	ctx.shadowColor = alertLevel > 0.5 ? "#ff0000" : glowColor;
+	ctx.shadowBlur = 10;
+	ctx.beginPath();
+	ctx.arc(eyeX, y, 4, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.shadowBlur = 0;
+
+	// Speed indicator for fast guards
+	if (type === "fast") {
+		ctx.strokeStyle = "#ff0066";
+		ctx.lineWidth = 2;
+		ctx.beginPath();
+		ctx.moveTo(x - size, y);
+		ctx.lineTo(x - size - 8, y - 4);
+		ctx.moveTo(x - size, y);
+		ctx.lineTo(x - size - 8, y + 4);
+		ctx.stroke();
 	}
 }
 
@@ -1710,7 +2166,7 @@ function draw(): void {
 		ctx.shadowBlur = 0;
 	}
 
-	// Draw artworks
+	// Draw artworks with holographic display effect
 	for (const artwork of gameState.artworks) {
 		if (artwork.collected) continue;
 
@@ -1721,23 +2177,98 @@ function draw(): void {
 
 		artwork.glowPhase += 0.05;
 
-		if (proximityGlow > 0) {
-			const glowIntensity =
-				proximityGlow * (0.5 + Math.sin(artwork.glowPhase) * 0.2);
-			ctx.shadowColor = "#ffd700";
-			ctx.shadowBlur = 20 * glowIntensity;
-		}
+		// Holographic pedestal
+		ctx.fillStyle = "rgba(255, 0, 255, 0.1)";
+		ctx.beginPath();
+		ctx.moveTo(
+			artwork.x - ARTWORK_SIZE / 2 - 10,
+			artwork.y + ARTWORK_SIZE / 2 + 5,
+		);
+		ctx.lineTo(
+			artwork.x + ARTWORK_SIZE / 2 + 10,
+			artwork.y + ARTWORK_SIZE / 2 + 5,
+		);
+		ctx.lineTo(artwork.x + ARTWORK_SIZE / 2, artwork.y + ARTWORK_SIZE / 2 + 15);
+		ctx.lineTo(artwork.x - ARTWORK_SIZE / 2, artwork.y + ARTWORK_SIZE / 2 + 15);
+		ctx.closePath();
+		ctx.fill();
+
+		// Neon frame glow
+		const glowIntensity =
+			0.5 + proximityGlow * 0.5 + Math.sin(artwork.glowPhase) * 0.2;
+		ctx.shadowColor = proximityGlow > 0.3 ? "#ff00ff" : "#00ffff";
+		ctx.shadowBlur = 15 * glowIntensity;
+
+		// Outer frame
+		ctx.strokeStyle = proximityGlow > 0.3 ? "#ff00ff" : "#00ffff";
+		ctx.lineWidth = 2 + proximityGlow * 2;
+		ctx.strokeRect(
+			artwork.x - ARTWORK_SIZE / 2 - 4,
+			artwork.y - ARTWORK_SIZE / 2 - 4,
+			ARTWORK_SIZE + 8,
+			ARTWORK_SIZE + 8,
+		);
+
+		// Corner accents
+		ctx.fillStyle = proximityGlow > 0.3 ? "#ff00ff" : "#00ffff";
+		const cornerSize = 6;
+		// Top-left
+		ctx.fillRect(
+			artwork.x - ARTWORK_SIZE / 2 - 4,
+			artwork.y - ARTWORK_SIZE / 2 - 4,
+			cornerSize,
+			2,
+		);
+		ctx.fillRect(
+			artwork.x - ARTWORK_SIZE / 2 - 4,
+			artwork.y - ARTWORK_SIZE / 2 - 4,
+			2,
+			cornerSize,
+		);
+		// Top-right
+		ctx.fillRect(
+			artwork.x + ARTWORK_SIZE / 2 + 4 - cornerSize,
+			artwork.y - ARTWORK_SIZE / 2 - 4,
+			cornerSize,
+			2,
+		);
+		ctx.fillRect(
+			artwork.x + ARTWORK_SIZE / 2 + 2,
+			artwork.y - ARTWORK_SIZE / 2 - 4,
+			2,
+			cornerSize,
+		);
+		// Bottom-left
+		ctx.fillRect(
+			artwork.x - ARTWORK_SIZE / 2 - 4,
+			artwork.y + ARTWORK_SIZE / 2 + 2,
+			cornerSize,
+			2,
+		);
+		ctx.fillRect(
+			artwork.x - ARTWORK_SIZE / 2 - 4,
+			artwork.y + ARTWORK_SIZE / 2 + 4 - cornerSize,
+			2,
+			cornerSize,
+		);
+		// Bottom-right
+		ctx.fillRect(
+			artwork.x + ARTWORK_SIZE / 2 + 4 - cornerSize,
+			artwork.y + ARTWORK_SIZE / 2 + 2,
+			cornerSize,
+			2,
+		);
+		ctx.fillRect(
+			artwork.x + ARTWORK_SIZE / 2 + 2,
+			artwork.y + ARTWORK_SIZE / 2 + 4 - cornerSize,
+			2,
+			cornerSize,
+		);
+
+		ctx.shadowBlur = 0;
 
 		const img = artwork.data ? artworkImages[artwork.data.id] : null;
 		if (img) {
-			ctx.strokeStyle = "#ffd700";
-			ctx.lineWidth = 3 + proximityGlow * 2;
-			ctx.strokeRect(
-				artwork.x - ARTWORK_SIZE / 2 - 2,
-				artwork.y - ARTWORK_SIZE / 2 - 2,
-				ARTWORK_SIZE + 4,
-				ARTWORK_SIZE + 4,
-			);
 			ctx.drawImage(
 				img,
 				artwork.x - ARTWORK_SIZE / 2,
@@ -1746,85 +2277,52 @@ function draw(): void {
 				ARTWORK_SIZE,
 			);
 		} else {
-			ctx.fillStyle = "#ffd700";
+			// Placeholder with neon gradient
+			const artGradient = ctx.createLinearGradient(
+				artwork.x - ARTWORK_SIZE / 2,
+				artwork.y - ARTWORK_SIZE / 2,
+				artwork.x + ARTWORK_SIZE / 2,
+				artwork.y + ARTWORK_SIZE / 2,
+			);
+			artGradient.addColorStop(0, "#00ffff");
+			artGradient.addColorStop(1, "#ff00ff");
+			ctx.fillStyle = artGradient;
 			ctx.fillRect(
 				artwork.x - ARTWORK_SIZE / 2,
 				artwork.y - ARTWORK_SIZE / 2,
 				ARTWORK_SIZE,
 				ARTWORK_SIZE,
 			);
-			ctx.fillStyle = "#16213e";
-			ctx.font = "12px Arial";
+			ctx.fillStyle = "#000";
+			ctx.font = "bold 10px Courier New";
 			ctx.textAlign = "center";
 			ctx.textBaseline = "middle";
-			ctx.fillText("ART", artwork.x, artwork.y);
+			ctx.fillText("DATA", artwork.x, artwork.y);
 		}
-		ctx.shadowBlur = 0;
 	}
 
 	// Draw guards
 	for (const guard of gameState.guards) {
-		const typeData = GUARD_TYPES[guard.type];
-
-		if (typeData.hasSpotlight) {
-			ctx.fillStyle = `rgba(255, 215, 0, ${0.1 + guard.alertLevel * 0.2})`;
-			ctx.beginPath();
-			ctx.moveTo(guard.x, guard.y);
-			ctx.arc(
-				guard.x,
-				guard.y,
-				100,
-				guard.spotlightAngle - 0.5,
-				guard.spotlightAngle + 0.5,
-			);
-			ctx.closePath();
-			ctx.fill();
-		}
-
-		if (guard.alertLevel > 0.3) {
-			ctx.fillStyle = `rgba(233, 69, 96, ${guard.alertLevel})`;
-			ctx.beginPath();
-			ctx.arc(
-				guard.x,
-				guard.y - GUARD_SIZE,
-				8 + guard.alertLevel * 4,
-				0,
-				Math.PI * 2,
-			);
-			ctx.fill();
-
-			if (guard.alertLevel > 0.7) {
-				ctx.fillStyle = "#ffffff";
-				ctx.font = "bold 14px Arial";
-				ctx.textAlign = "center";
-				ctx.textBaseline = "middle";
-				ctx.fillText("!", guard.x, guard.y - GUARD_SIZE);
-			}
-		}
-
-		ctx.font = `${GUARD_SIZE}px Arial`;
-		ctx.textAlign = "center";
-		ctx.textBaseline = "middle";
-
-		if (guard.alertLevel > 0.5) {
-			ctx.shadowColor = "#e94560";
-			ctx.shadowBlur = 10 * guard.alertLevel;
-		}
-
-		ctx.fillText(typeData.emoji, guard.x, guard.y);
-		ctx.shadowBlur = 0;
+		drawCyberGuard(
+			guard.x,
+			guard.y,
+			guard.type,
+			guard.alertLevel,
+			guard.spotlightAngle,
+		);
 	}
 
 	drawSpeedLines();
 
-	// Draw path
+	// Draw path with neon trail
 	if (gameState.path.length > 1) {
-		ctx.strokeStyle = "rgba(233, 69, 96, 0.3)";
-		ctx.lineWidth = 8;
+		// Outer glow
+		ctx.strokeStyle = "rgba(0, 255, 255, 0.2)";
+		ctx.lineWidth = 10;
 		ctx.lineCap = "round";
 		ctx.lineJoin = "round";
-		ctx.shadowColor = "#e94560";
-		ctx.shadowBlur = 15;
+		ctx.shadowColor = "#00ffff";
+		ctx.shadowBlur = 20;
 
 		ctx.beginPath();
 		ctx.moveTo(gameState.path[0].x, gameState.path[0].y);
@@ -1840,8 +2338,9 @@ function draw(): void {
 		}
 		ctx.stroke();
 
-		ctx.strokeStyle = "#e94560";
-		ctx.lineWidth = 3;
+		// Core line
+		ctx.strokeStyle = "#00ffff";
+		ctx.lineWidth = 2;
 		ctx.shadowBlur = 0;
 
 		ctx.beginPath();
@@ -1859,24 +2358,46 @@ function draw(): void {
 		ctx.stroke();
 	}
 
-	// Draw player
+	// Draw player as cyber drone
 	const pulseSize = 6 + Math.sin(Date.now() / 100) * 1.5;
 	const playerAlpha = gameState.isInvisible ? 0.3 : 1;
 
 	ctx.globalAlpha = playerAlpha;
 
-	ctx.shadowColor = "#ffffff";
-	ctx.shadowBlur = 15;
+	// Outer glow
+	ctx.shadowColor = "#ff00ff";
+	ctx.shadowBlur = 25;
+
+	// Diamond shape for player
+	ctx.fillStyle = "#ff00ff";
+	ctx.beginPath();
+	ctx.moveTo(gameState.playerX, gameState.playerY - pulseSize);
+	ctx.lineTo(gameState.playerX + pulseSize, gameState.playerY);
+	ctx.lineTo(gameState.playerX, gameState.playerY + pulseSize);
+	ctx.lineTo(gameState.playerX - pulseSize, gameState.playerY);
+	ctx.closePath();
+	ctx.fill();
+
+	// Inner core
+	ctx.shadowBlur = 0;
 	ctx.fillStyle = "#ffffff";
 	ctx.beginPath();
-	ctx.arc(gameState.playerX, gameState.playerY, pulseSize, 0, Math.PI * 2);
+	ctx.arc(
+		gameState.playerX,
+		gameState.playerY,
+		pulseSize * 0.4,
+		0,
+		Math.PI * 2,
+	);
 	ctx.fill();
-	ctx.shadowBlur = 0;
 
+	// Direction indicator
 	const dirAngle = gameState.goingUp ? -Math.PI / 4 : Math.PI / 4;
-	const indicatorLength = 15;
-	ctx.strokeStyle = "#ffffff";
+	const indicatorLength = 18;
+	ctx.strokeStyle = "#00ffff";
 	ctx.lineWidth = 2;
+	ctx.shadowColor = "#00ffff";
+	ctx.shadowBlur = 10;
 	ctx.beginPath();
 	ctx.moveTo(gameState.playerX, gameState.playerY);
 	ctx.lineTo(
@@ -1884,6 +2405,7 @@ function draw(): void {
 		gameState.playerY + Math.sin(dirAngle) * indicatorLength,
 	);
 	ctx.stroke();
+	ctx.shadowBlur = 0;
 
 	ctx.globalAlpha = 1;
 
@@ -1963,6 +2485,7 @@ speedBtns.forEach((btn) => {
 		});
 		btn.classList.add("selected");
 		speedMultiplier = parseInt(btn.dataset.speed || "1", 10);
+		localStorage.setItem("artHeistSpeed", speedMultiplier.toString());
 	});
 });
 
