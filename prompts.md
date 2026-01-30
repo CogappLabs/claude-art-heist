@@ -70,3 +70,14 @@ add a visual effect when caught
 
 ## Prompt 21
 Is there any way I can run all of this on Github Pages?
+
+## Prompt 22
+For the git push it tells me
+
+remote: Invalid username or token. Password authentication is not supported for Git operations.
+fatal: Authentication failed for 'https://github.com/tristanr-cogapp/claude-art-heist.git/'
+
+How can I get it to do it with SSH authentication instead?
+
+## Prompt 23
+I have created a blank repo at https://github.com/CogappLabs/claude-art-heist what should I do not to add the code?
