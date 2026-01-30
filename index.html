@@ -1211,11 +1211,19 @@
                 let attempts = 0;
 
                 do {
+                    const baseX = minX + Math.random() * (canvas.width - minX - margin);
+                    const baseY = margin + Math.random() * (canvas.height - margin * 2);
                     powerup = {
-                        x: minX + Math.random() * (canvas.width - minX - margin),
-                        y: margin + Math.random() * (canvas.height - margin * 2),
+                        baseX: baseX,
+                        baseY: baseY,
+                        x: baseX,
+                        y: baseY,
                         type: types[Math.floor(Math.random() * types.length)],
-                        collected: false
+                        collected: false,
+                        // Float animation properties
+                        phase: Math.random() * Math.PI * 2,
+                        floatSpeed: 1.5 + Math.random() * 1,
+                        floatRadius: 5 + Math.random() * 5
                     };
                     attempts++;
                 } while (attempts < 50 && isOverlappingPowerup(powerup));
@@ -1225,11 +1233,11 @@
         }
 
         function isOverlappingPowerup(newPowerup) {
-            // Check against other powerups
+            // Check against other powerups (use base positions)
             for (const p of gameState.powerups) {
-                const dx = newPowerup.x - p.x;
-                const dy = newPowerup.y - p.y;
-                if (Math.sqrt(dx * dx + dy * dy) < POWERUP_SIZE * 2) {
+                const dx = newPowerup.baseX - (p.baseX || p.x);
+                const dy = newPowerup.baseY - (p.baseY || p.y);
+                if (Math.sqrt(dx * dx + dy * dy) < POWERUP_SIZE * 3) {
                     return true;
                 }
             }
@@ -1266,6 +1274,8 @@
                     break;
 
                 case 'bulkHeist':
+                    // Trigger visual effect
+                    triggerBulkHeistEffect(gameState.playerX, gameState.playerY);
                     // Collect all artworks within radius
                     const radius = POWERUP_TYPES.bulkHeist.radius;
                     for (const art of gameState.artworks) {
@@ -1418,8 +1428,16 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
+            const time = Date.now() / 1000;
+
             for (const powerup of gameState.powerups) {
                 if (powerup.collected) continue;
+
+                // Calculate floating position
+                const floatX = Math.sin(time * powerup.floatSpeed + powerup.phase) * powerup.floatRadius;
+                const floatY = Math.cos(time * powerup.floatSpeed * 0.7 + powerup.phase) * powerup.floatRadius;
+                powerup.x = powerup.baseX + floatX;
+                powerup.y = powerup.baseY + floatY;
 
                 const type = POWERUP_TYPES[powerup.type];
 
@@ -1438,6 +1456,63 @@
                 ctx.fillText(type.icon, powerup.x, powerup.y);
                 ctx.restore();
             }
+        }
+
+        // Bulk heist collection effect
+        let bulkHeistEffect = null;
+
+        function triggerBulkHeistEffect(x, y) {
+            bulkHeistEffect = {
+                x: x,
+                y: y,
+                radius: POWERUP_TYPES.bulkHeist.radius,
+                progress: 0
+            };
+        }
+
+        function updateBulkHeistEffect() {
+            if (!bulkHeistEffect) return;
+
+            bulkHeistEffect.progress += 0.03;
+
+            if (bulkHeistEffect.progress >= 1) {
+                bulkHeistEffect = null;
+            }
+        }
+
+        function drawBulkHeistEffect() {
+            if (!bulkHeistEffect) return;
+
+            const { x, y, radius, progress } = bulkHeistEffect;
+
+            // Contracting circle animation
+            const currentRadius = radius * (1 - progress);
+            const alpha = 1 - progress;
+
+            // Outer ring contracting inward
+            ctx.strokeStyle = `rgba(255, 215, 0, ${alpha})`;
+            ctx.lineWidth = 3;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.arc(x, y, currentRadius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Inner glow
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, currentRadius);
+            gradient.addColorStop(0, `rgba(255, 215, 0, ${alpha * 0.3})`);
+            gradient.addColorStop(0.7, `rgba(255, 215, 0, ${alpha * 0.1})`);
+            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(x, y, currentRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Sparkle ring at the edge
+            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.8})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x, y, currentRadius * 0.95, 0, Math.PI * 2);
+            ctx.stroke();
         }
 
         function updateUI() {
@@ -1502,6 +1577,7 @@
             // Always update effects even when game over
             updateParticles();
             updateScreenEffects();
+            updateBulkHeistEffect();
 
             if (gameState.gameOver) return;
             if (!gameState.gameStarted) return;
@@ -1666,13 +1742,21 @@
             // Draw powerups
             drawPowerups();
 
+            // Draw bulk heist effect
+            drawBulkHeistEffect();
+
             // Draw guards
             ctx.font = `${GUARD_SIZE}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
+            // Fade guards when shield is active
+            if (gameState.activePowerups.shield.active) {
+                ctx.globalAlpha = 0.4;
+            }
             for (const guard of gameState.guards) {
                 ctx.fillText(GUARD_EMOJI, guard.x, guard.y);
             }
+            ctx.globalAlpha = 1;
 
             // Draw path
             if (gameState.path.length > 1) {
@@ -1772,6 +1856,7 @@
                 particles = [];
                 screenShake = { intensity: 0, duration: 0 };
                 screenFlash = { color: null, alpha: 0 };
+                bulkHeistEffect = null;
                 hideFinishScreen();
                 stopMusic();
                 init();

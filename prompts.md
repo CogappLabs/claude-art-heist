@@ -102,3 +102,15 @@ Why do the guards look faded most of the time?
 
 ## Prompt 30
 They still appear faded until I collect the money bag power up
+
+## Prompt 31
+Make the powerups float around slightly
+
+## Prompt 32
+when I have the shield powerup active, fade the guards to indicate that I can hit one
+
+## Prompt 33
+when I have the bulk heist powerup, do some animated indication of the radius that it is heisting from
+
+## Prompt 34
+only show the radius when I trigger the bulk heist powerup, and animate it to indicate that it is collecting artworks
