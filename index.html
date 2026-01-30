@@ -202,6 +202,113 @@
             font-size: 18px;
             padding: 40px;
         }
+        #splash-screen {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.98);
+            z-index: 200;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #splash-screen.hidden {
+            display: none;
+        }
+        #splash-screen .splash-title {
+            color: #e94560;
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        #splash-screen .splash-subtitle {
+            color: #ffd700;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+        #splash-screen .splash-section {
+            max-width: 600px;
+            width: 100%;
+            margin-bottom: 25px;
+        }
+        #splash-screen .splash-section-title {
+            color: #e94560;
+            font-size: 16px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        #splash-screen .splash-controls {
+            color: #eee;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        #splash-screen .splash-powerups {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        #splash-screen .powerup-item {
+            background: #16213e;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #splash-screen .powerup-icon {
+            font-size: 24px;
+            width: 36px;
+            text-align: center;
+        }
+        #splash-screen .powerup-info {
+            flex: 1;
+        }
+        #splash-screen .powerup-name {
+            color: #ffd700;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        #splash-screen .powerup-desc {
+            color: #888;
+            font-size: 11px;
+        }
+        #splash-screen .splash-start {
+            color: #fff;
+            font-size: 20px;
+            margin-top: 20px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        #active-powerups {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 8px;
+        }
+        .active-powerup {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ffd700;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .active-powerup .powerup-timer {
+            color: #ffd700;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -233,6 +340,58 @@
         <div class="finish-footer">Press R to try again</div>
     </div>
 
+    <div id="splash-screen">
+        <div class="splash-title">ART HEIST</div>
+        <div class="splash-subtitle">Steal priceless art. Avoid the guards.</div>
+
+        <div class="splash-section">
+            <div class="splash-section-title">Controls</div>
+            <div class="splash-controls">
+                <strong>SPACE</strong> (hold) - Angle upward<br>
+                <strong>SPACE</strong> (release) - Angle downward<br>
+                <strong>R</strong> - Restart game
+            </div>
+        </div>
+
+        <div class="splash-section">
+            <div class="splash-section-title">Power-ups</div>
+            <div class="splash-powerups">
+                <div class="powerup-item">
+                    <div class="powerup-icon">🧲</div>
+                    <div class="powerup-info">
+                        <div class="powerup-name">Magnet</div>
+                        <div class="powerup-desc">Pulls nearby artworks toward you</div>
+                    </div>
+                </div>
+                <div class="powerup-item">
+                    <div class="powerup-icon">🎒</div>
+                    <div class="powerup-info">
+                        <div class="powerup-name">Bulk Heist</div>
+                        <div class="powerup-desc">Instantly collect all nearby art</div>
+                    </div>
+                </div>
+                <div class="powerup-item">
+                    <div class="powerup-icon">🛡️</div>
+                    <div class="powerup-info">
+                        <div class="powerup-name">Shield</div>
+                        <div class="powerup-desc">Survive one guard collision</div>
+                    </div>
+                </div>
+                <div class="powerup-item">
+                    <div class="powerup-icon">💰</div>
+                    <div class="powerup-info">
+                        <div class="powerup-name">Bribe</div>
+                        <div class="powerup-desc">Turn nearest guard into artwork</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="splash-start">Press SPACE to start</div>
+    </div>
+
+    <div id="active-powerups"></div>
+
     <script>
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
@@ -248,16 +407,32 @@
             path: [],
             guards: [],
             artworks: [],
+            powerups: [],
             goingUp: false,
             gameOver: false,
+            gameStarted: false,
             level: 1,
             score: 0,
             speed: 3,
             artworksLoaded: false,
             currentStyle: null,
             usedStyles: [],
-            stolenArtworks: []
+            stolenArtworks: [],
+            // Active power-up states
+            activePowerups: {
+                magnet: { active: false, duration: 0 },
+                shield: { active: false, count: 0 }
+            }
         };
+
+        // Power-up definitions
+        const POWERUP_TYPES = {
+            magnet: { icon: '🧲', name: 'Magnet', duration: 300 }, // 5 seconds at 60fps
+            bulkHeist: { icon: '🎒', name: 'Bulk Heist', radius: 150 },
+            shield: { icon: '🛡️', name: 'Shield' },
+            bribe: { icon: '💰', name: 'Bribe' }
+        };
+        const POWERUP_SIZE = 30;
 
         const finishScreenEl = document.getElementById('finish-screen');
 
@@ -878,6 +1053,8 @@
 
             spawnGuards(4 + gameState.level);
             spawnArtworks(3 + gameState.level);
+            spawnPowerups();
+            updateActivePowerupsUI();
             updateUI();
         }
 
@@ -1020,6 +1197,249 @@
             return false;
         }
 
+        function spawnPowerups() {
+            gameState.powerups = [];
+            const margin = 50;
+            const minX = 150;
+            const types = Object.keys(POWERUP_TYPES);
+
+            // Spawn 1-2 random powerups per level
+            const count = Math.min(1 + Math.floor(gameState.level / 3), 3);
+
+            for (let i = 0; i < count; i++) {
+                let powerup;
+                let attempts = 0;
+
+                do {
+                    powerup = {
+                        x: minX + Math.random() * (canvas.width - minX - margin),
+                        y: margin + Math.random() * (canvas.height - margin * 2),
+                        type: types[Math.floor(Math.random() * types.length)],
+                        collected: false
+                    };
+                    attempts++;
+                } while (attempts < 50 && isOverlappingPowerup(powerup));
+
+                gameState.powerups.push(powerup);
+            }
+        }
+
+        function isOverlappingPowerup(newPowerup) {
+            // Check against other powerups
+            for (const p of gameState.powerups) {
+                const dx = newPowerup.x - p.x;
+                const dy = newPowerup.y - p.y;
+                if (Math.sqrt(dx * dx + dy * dy) < POWERUP_SIZE * 2) {
+                    return true;
+                }
+            }
+            // Check against artworks
+            for (const art of gameState.artworks) {
+                const dx = newPowerup.x - art.x;
+                const dy = newPowerup.y - art.y;
+                if (Math.sqrt(dx * dx + dy * dy) < POWERUP_SIZE + ARTWORK_SIZE) {
+                    return true;
+                }
+            }
+            // Check against guards
+            for (const guard of gameState.guards) {
+                const gx = guard.baseX || guard.x;
+                const gy = guard.baseY || guard.y;
+                const dx = newPowerup.x - gx;
+                const dy = newPowerup.y - gy;
+                if (Math.sqrt(dx * dx + dy * dy) < POWERUP_SIZE + GUARD_SIZE + 30) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function collectPowerup(powerup) {
+            powerup.collected = true;
+            spawnCollectParticles(powerup.x, powerup.y);
+            playPowerupSound();
+
+            switch (powerup.type) {
+                case 'magnet':
+                    gameState.activePowerups.magnet.active = true;
+                    gameState.activePowerups.magnet.duration = POWERUP_TYPES.magnet.duration;
+                    break;
+
+                case 'bulkHeist':
+                    // Collect all artworks within radius
+                    const radius = POWERUP_TYPES.bulkHeist.radius;
+                    for (const art of gameState.artworks) {
+                        if (art.collected) continue;
+                        const dx = gameState.playerX - art.x;
+                        const dy = gameState.playerY - art.y;
+                        if (Math.sqrt(dx * dx + dy * dy) < radius) {
+                            art.collected = true;
+                            gameState.score += 50;
+                            spawnCollectParticles(art.x, art.y);
+                            if (art.data) {
+                                gameState.stolenArtworks.push(art.data);
+                            }
+                        }
+                    }
+                    updateUI();
+                    break;
+
+                case 'shield':
+                    gameState.activePowerups.shield.active = true;
+                    gameState.activePowerups.shield.count = 1;
+                    break;
+
+                case 'bribe':
+                    // Find nearest guard and convert to artwork
+                    let nearestGuard = null;
+                    let nearestDist = Infinity;
+                    for (let i = 0; i < gameState.guards.length; i++) {
+                        const guard = gameState.guards[i];
+                        const dx = gameState.playerX - guard.x;
+                        const dy = gameState.playerY - guard.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < nearestDist) {
+                            nearestDist = dist;
+                            nearestGuard = i;
+                        }
+                    }
+                    if (nearestGuard !== null) {
+                        const guard = gameState.guards[nearestGuard];
+                        // Create artwork at guard position
+                        const styleArtworks = gameState.currentStyle
+                            ? artworksByStyle[gameState.currentStyle] || []
+                            : [];
+                        const newArt = {
+                            x: guard.x,
+                            y: guard.y,
+                            collected: false,
+                            data: styleArtworks.length > 0
+                                ? styleArtworks[Math.floor(Math.random() * styleArtworks.length)]
+                                : null
+                        };
+                        if (newArt.data) loadArtworkImage(newArt.data);
+                        gameState.artworks.push(newArt);
+                        // Remove guard with effect
+                        spawnBribeParticles(guard.x, guard.y);
+                        gameState.guards.splice(nearestGuard, 1);
+                    }
+                    break;
+            }
+
+            updateActivePowerupsUI();
+        }
+
+        function spawnBribeParticles(x, y) {
+            const colors = ['#ffd700', '#50fa7b', '#fff'];
+            for (let i = 0; i < 15; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2 + Math.random() * 3;
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 1.0,
+                    decay: 0.02,
+                    size: 4 + Math.random() * 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    type: 'circle'
+                });
+            }
+        }
+
+        function playPowerupSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+
+            // Ascending powerup sound
+            const frequencies = [392.00, 523.25, 659.25, 783.99]; // G4, C5, E5, G5
+
+            frequencies.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + i * 0.06);
+                gain.gain.setValueAtTime(0, now + i * 0.06);
+                gain.gain.linearRampToValueAtTime(0.12, now + i * 0.06 + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.15);
+                osc.start(now + i * 0.06);
+                osc.stop(now + i * 0.06 + 0.15);
+            });
+        }
+
+        function updatePowerups() {
+            // Update magnet duration
+            if (gameState.activePowerups.magnet.active) {
+                gameState.activePowerups.magnet.duration--;
+                if (gameState.activePowerups.magnet.duration <= 0) {
+                    gameState.activePowerups.magnet.active = false;
+                }
+                updateActivePowerupsUI();
+
+                // Pull artworks toward player
+                for (const art of gameState.artworks) {
+                    if (art.collected) continue;
+                    const dx = gameState.playerX - art.x;
+                    const dy = gameState.playerY - art.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 200 && dist > 10) {
+                        art.x += (dx / dist) * 2;
+                        art.y += (dy / dist) * 2;
+                    }
+                }
+            }
+        }
+
+        function updateActivePowerupsUI() {
+            const container = document.getElementById('active-powerups');
+            container.innerHTML = '';
+
+            if (gameState.activePowerups.magnet.active) {
+                const el = document.createElement('div');
+                el.className = 'active-powerup';
+                const seconds = Math.ceil(gameState.activePowerups.magnet.duration / 60);
+                el.innerHTML = `🧲 <span class="powerup-timer">${seconds}s</span>`;
+                container.appendChild(el);
+            }
+
+            if (gameState.activePowerups.shield.active) {
+                const el = document.createElement('div');
+                el.className = 'active-powerup';
+                el.innerHTML = `🛡️`;
+                container.appendChild(el);
+            }
+        }
+
+        function drawPowerups() {
+            ctx.font = `${POWERUP_SIZE}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            for (const powerup of gameState.powerups) {
+                if (powerup.collected) continue;
+
+                const type = POWERUP_TYPES[powerup.type];
+
+                // Draw glow effect
+                ctx.save();
+                ctx.shadowColor = '#ffd700';
+                ctx.shadowBlur = 15;
+
+                // Draw background circle
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.2)';
+                ctx.beginPath();
+                ctx.arc(powerup.x, powerup.y, POWERUP_SIZE * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw icon
+                ctx.fillText(type.icon, powerup.x, powerup.y);
+                ctx.restore();
+            }
+        }
+
         function updateUI() {
             levelEl.textContent = gameState.level;
             scoreEl.textContent = gameState.score;
@@ -1084,9 +1504,13 @@
             updateScreenEffects();
 
             if (gameState.gameOver) return;
+            if (!gameState.gameStarted) return;
 
             // Update guard positions
             updateGuards();
+
+            // Update powerups
+            updatePowerups();
 
             // Move player
             const angle = gameState.goingUp ? -Math.PI / 4 : Math.PI / 4;
@@ -1111,6 +1535,16 @@
             // Add to path
             gameState.path.push({ x: gameState.playerX, y: gameState.playerY });
 
+            // Check collision with powerups
+            for (const powerup of gameState.powerups) {
+                if (powerup.collected) continue;
+                const dx = gameState.playerX - powerup.x;
+                const dy = gameState.playerY - powerup.y;
+                if (Math.sqrt(dx * dx + dy * dy) < POWERUP_SIZE / 2 + 5) {
+                    collectPowerup(powerup);
+                }
+            }
+
             // Check collision with artworks (collect them)
             for (const artwork of gameState.artworks) {
                 if (artwork.collected) continue;
@@ -1130,10 +1564,23 @@
             }
 
             // Check collision with guards
-            for (const guard of gameState.guards) {
+            for (let i = gameState.guards.length - 1; i >= 0; i--) {
+                const guard = gameState.guards[i];
                 const dx = gameState.playerX - guard.x;
                 const dy = gameState.playerY - guard.y;
                 if (Math.sqrt(dx * dx + dy * dy) < GUARD_SIZE / 2 + 5) {
+                    // Check for shield
+                    if (gameState.activePowerups.shield.active) {
+                        gameState.activePowerups.shield.active = false;
+                        gameState.activePowerups.shield.count = 0;
+                        // Remove the guard we collided with
+                        spawnBribeParticles(guard.x, guard.y);
+                        gameState.guards.splice(i, 1);
+                        playPowerupSound();
+                        updateActivePowerupsUI();
+                        continue;
+                    }
+
                     gameState.gameOver = true;
                     stopMusic();
                     triggerCaughtEffect(gameState.playerX, gameState.playerY);
@@ -1216,6 +1663,9 @@
                 }
             }
 
+            // Draw powerups
+            drawPowerups();
+
             // Draw guards
             ctx.font = `${GUARD_SIZE}px Arial`;
             ctx.textAlign = 'center';
@@ -1281,10 +1731,29 @@
             requestAnimationFrame(gameLoop);
         }
 
+        // Splash screen
+        const splashScreen = document.getElementById('splash-screen');
+
+        function hideSplashScreen() {
+            splashScreen.classList.add('hidden');
+            gameState.gameStarted = true;
+        }
+
         // Event listeners
         document.addEventListener('keydown', (e) => {
             // Initialize audio on first interaction (browser requirement)
             initAudio();
+
+            // Handle splash screen
+            if (!splashScreen.classList.contains('hidden')) {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    hideSplashScreen();
+                    startMusic();
+                }
+                return;
+            }
+
             if (!musicPlaying && !gameState.gameOver) {
                 startMusic();
             }
@@ -1298,6 +1767,8 @@
                 gameState.score = 0;
                 gameState.usedStyles = [];
                 gameState.stolenArtworks = [];
+                gameState.activePowerups.magnet = { active: false, duration: 0 };
+                gameState.activePowerups.shield = { active: false, count: 0 };
                 particles = [];
                 screenShake = { intensity: 0, duration: 0 };
                 screenFlash = { color: null, alpha: 0 };
@@ -1309,7 +1780,7 @@
         });
 
         document.addEventListener('keyup', (e) => {
-            if (e.code === 'Space') {
+            if (e.code === 'Space' && gameState.gameStarted) {
                 gameState.goingUp = false;
             }
         });

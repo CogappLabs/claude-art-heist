@@ -90,3 +90,15 @@ Add some music that intensifies as you progress
 
 ## Prompt 26
 Make each end screen artwork box link to the artwork page on the AIC website (format https://www.artic.edu/artworks/[artwork id])
+
+## Prompt 27
+give me some ideas for powerups that could be added
+
+## Prompt 28
+Implement magnet, bulk heist shield and bribe. Also add a list of all available powerups on a starting splash screen
+
+## Prompt 29
+Why do the guards look faded most of the time?
+
+## Prompt 30
+They still appear faded until I collect the money bag power up
