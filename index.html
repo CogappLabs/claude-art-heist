@@ -136,6 +136,14 @@
             padding: 15px;
             display: flex;
             gap: 15px;
+            text-decoration: none;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        #finish-screen .loot-item:hover {
+            transform: translateY(-3px);
+            border-color: #fff;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
         }
         #finish-screen .loot-image {
             width: 100px;
@@ -371,6 +379,209 @@
 
             thud.start(now);
             thud.stop(now + 0.3);
+        }
+
+        // Music system
+        let musicPlaying = false;
+        let musicInterval = null;
+        let currentBeat = 0;
+        let musicGain = null;
+
+        // Musical scales and patterns
+        const bassNotes = [65.41, 73.42, 82.41, 87.31]; // C2, D2, E2, F2
+        const melodyNotes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00]; // C4-A4
+
+        function startMusic() {
+            if (!audioCtx || musicPlaying) return;
+            musicPlaying = true;
+            currentBeat = 0;
+
+            // Master gain for music
+            musicGain = audioCtx.createGain();
+            musicGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            musicGain.connect(audioCtx.destination);
+
+            playMusicLoop();
+        }
+
+        function stopMusic() {
+            musicPlaying = false;
+            if (musicInterval) {
+                clearTimeout(musicInterval);
+                musicInterval = null;
+            }
+        }
+
+        function getTempoForLevel() {
+            // Starts at 140 BPM, increases by 5 BPM per level, max 200 BPM
+            const bpm = Math.min(140 + (gameState.level - 1) * 5, 200);
+            return 60000 / bpm / 4; // Time per 16th note in ms
+        }
+
+        function playMusicLoop() {
+            if (!musicPlaying || !audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const level = gameState.level;
+            const beat = currentBeat % 16; // 16-step pattern
+
+            // Kick drum on beats 0, 4, 8, 12
+            if (beat % 4 === 0) {
+                playKick(now);
+            }
+
+            // Hi-hat - more complex pattern at higher levels
+            if (level >= 1 && beat % 2 === 0) {
+                playHiHat(now, 0.05);
+            }
+            if (level >= 3 && beat % 2 === 1) {
+                playHiHat(now, 0.02); // Quieter off-beats
+            }
+            if (level >= 5) {
+                playHiHat(now, 0.015); // Even more hi-hats
+            }
+
+            // Bass line
+            if (beat % 4 === 0) {
+                const bassNote = bassNotes[Math.floor(beat / 4) % bassNotes.length];
+                playBass(now, bassNote);
+            }
+
+            // Synth stabs at higher levels
+            if (level >= 2 && (beat === 2 || beat === 10)) {
+                playSynthStab(now);
+            }
+
+            // Melody at even higher levels
+            if (level >= 4 && beat % 4 === 2) {
+                const melodyNote = melodyNotes[Math.floor(Math.random() * melodyNotes.length)];
+                playMelody(now, melodyNote);
+            }
+
+            // Tension notes at high levels
+            if (level >= 6 && beat === 14) {
+                playTension(now);
+            }
+
+            currentBeat++;
+            musicInterval = setTimeout(playMusicLoop, getTempoForLevel());
+        }
+
+        function playKick(time) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(musicGain);
+
+            osc.frequency.setValueAtTime(150, time);
+            osc.frequency.exponentialRampToValueAtTime(30, time + 0.1);
+
+            gain.gain.setValueAtTime(0.4, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+
+            osc.start(time);
+            osc.stop(time + 0.15);
+        }
+
+        function playHiHat(time, volume) {
+            // Use noise-like sound for hi-hat
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(1000 + Math.random() * 500, time);
+
+            filter.type = 'highpass';
+            filter.frequency.setValueAtTime(7000, time);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(musicGain);
+
+            gain.gain.setValueAtTime(volume, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+
+            osc.start(time);
+            osc.stop(time + 0.05);
+        }
+
+        function playBass(time, freq) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, time);
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(200, time);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(musicGain);
+
+            gain.gain.setValueAtTime(0.15, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
+
+            osc.start(time);
+            osc.stop(time + 0.2);
+        }
+
+        function playSynthStab(time) {
+            const frequencies = [130.81, 164.81, 196.00]; // C3, E3, G3 chord
+
+            frequencies.forEach(freq => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(freq, time);
+
+                osc.connect(gain);
+                gain.connect(musicGain);
+
+                gain.gain.setValueAtTime(0.03, time);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+
+                osc.start(time);
+                osc.stop(time + 0.1);
+            });
+        }
+
+        function playMelody(time, freq) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, time);
+
+            osc.connect(gain);
+            gain.connect(musicGain);
+
+            gain.gain.setValueAtTime(0.08, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+
+            osc.start(time);
+            osc.stop(time + 0.15);
+        }
+
+        function playTension(time) {
+            // Dissonant note for tension
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(233.08, time); // Bb3 - creates tension
+
+            osc.connect(gain);
+            gain.connect(musicGain);
+
+            gain.gain.setValueAtTime(0.04, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
+
+            osc.start(time);
+            osc.stop(time + 0.2);
         }
 
         // Screen effects
@@ -827,8 +1038,11 @@
                 lootGrid.innerHTML = '<div class="no-loot">No artworks stolen... maybe next time!</div>';
             } else {
                 for (const art of gameState.stolenArtworks) {
-                    const item = document.createElement('div');
+                    const item = document.createElement('a');
                     item.className = 'loot-item';
+                    item.href = `https://www.artic.edu/artworks/${art.id}`;
+                    item.target = '_blank';
+                    item.rel = 'noopener noreferrer';
 
                     const img = artworkImages[art.id];
                     let imageHtml;
@@ -921,6 +1135,7 @@
                 const dy = gameState.playerY - guard.y;
                 if (Math.sqrt(dx * dx + dy * dy) < GUARD_SIZE / 2 + 5) {
                     gameState.gameOver = true;
+                    stopMusic();
                     triggerCaughtEffect(gameState.playerX, gameState.playerY);
                     playCaughtSound();
                     // Delay showing finish screen to let effect play
@@ -1070,6 +1285,9 @@
         document.addEventListener('keydown', (e) => {
             // Initialize audio on first interaction (browser requirement)
             initAudio();
+            if (!musicPlaying && !gameState.gameOver) {
+                startMusic();
+            }
 
             if (e.code === 'Space') {
                 e.preventDefault();
@@ -1084,7 +1302,9 @@
                 screenShake = { intensity: 0, duration: 0 };
                 screenFlash = { color: null, alpha: 0 };
                 hideFinishScreen();
+                stopMusic();
                 init();
+                startMusic();
             }
         });
 

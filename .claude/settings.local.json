@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.artic.edu)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd music, visual effects, and AIC artwork links\n\n- Procedural heist music that intensifies with each level\n- Visual effect when caught \\(screen shake, red flash, particles\\)\n- Finish screen artworks now link to AIC website\n- Auto-detect environment for GitHub Pages compatibility\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}

@@ -81,3 +81,12 @@ How can I get it to do it with SSH authentication instead?
 
 ## Prompt 23
 I have created a blank repo at https://github.com/CogappLabs/claude-art-heist what should I do not to add the code?
+
+## Prompt 24
+What should I do to make it even more fun?
+
+## Prompt 25
+Add some music that intensifies as you progress
+
+## Prompt 26
+Make each end screen artwork box link to the artwork page on the AIC website (format https://www.artic.edu/artworks/[artwork id])
