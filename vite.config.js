@@ -1,13 +1,13 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from "vite";
 
 export default defineConfig({
-    server: {
-        proxy: {
-            '/iiif': {
-                target: 'https://www.artic.edu',
-                changeOrigin: true,
-                secure: true
-            }
-        }
-    }
+	server: {
+		proxy: {
+			"/iiif": {
+				target: "https://www.artic.edu",
+				changeOrigin: true,
+				secure: true,
+			},
+		},
+	},
 });
