@@ -197,6 +197,135 @@
             font-size: 14px;
             margin-bottom: 20px;
         }
+        #finish-screen .highscore-section {
+            max-width: 400px;
+            margin: 0 auto 30px;
+            background: #16213e;
+            border: 2px solid #ffd700;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        #finish-screen .highscore-title {
+            color: #ffd700;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        #finish-screen .highscore-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #finish-screen .highscore-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #333;
+            font-size: 13px;
+        }
+        #finish-screen .highscore-item:last-child {
+            border-bottom: none;
+        }
+        #finish-screen .highscore-rank {
+            color: #888;
+            width: 30px;
+        }
+        #finish-screen .highscore-name {
+            color: #eee;
+            flex: 1;
+        }
+        #finish-screen .highscore-score {
+            color: #ffd700;
+        }
+        #finish-screen .highscore-item.current-player {
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 4px;
+            padding: 5px;
+            margin: -5px;
+        }
+        #name-entry-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 300;
+            align-items: center;
+            justify-content: center;
+        }
+        #name-entry-modal.show {
+            display: flex;
+        }
+        #name-entry-modal .modal-content {
+            background: #16213e;
+            border: 3px solid #ffd700;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            max-width: 400px;
+        }
+        #name-entry-modal .modal-title {
+            color: #ffd700;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        #name-entry-modal .modal-subtitle {
+            color: #eee;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        #name-entry-modal input {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            background: #1a1a2e;
+            border: 2px solid #ffd700;
+            border-radius: 6px;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        #name-entry-modal input:focus {
+            outline: none;
+            border-color: #fff;
+        }
+        #name-entry-modal .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        #name-entry-modal button {
+            padding: 10px 25px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            border: 2px solid;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #name-entry-modal .submit-btn {
+            background: #ffd700;
+            border-color: #ffd700;
+            color: #16213e;
+        }
+        #name-entry-modal .submit-btn:hover {
+            background: #fff;
+            border-color: #fff;
+        }
+        #name-entry-modal .skip-btn {
+            background: transparent;
+            border-color: #888;
+            color: #888;
+        }
+        #name-entry-modal .skip-btn:hover {
+            border-color: #eee;
+            color: #eee;
+        }
         #finish-screen .no-loot {
             text-align: center;
             color: #888;
@@ -296,6 +425,113 @@
             display: flex;
             gap: 8px;
         }
+        #config-panel {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.98);
+            z-index: 400;
+            align-items: center;
+            justify-content: center;
+        }
+        #config-panel.show {
+            display: flex;
+        }
+        #config-panel .config-content {
+            background: #16213e;
+            border: 3px solid #ffd700;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+        }
+        #config-panel .config-title {
+            color: #ffd700;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        #config-panel .config-desc {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.5;
+        }
+        #config-panel .config-desc a {
+            color: #ffd700;
+        }
+        #config-panel .config-field {
+            margin-bottom: 15px;
+        }
+        #config-panel .config-field label {
+            display: block;
+            color: #eee;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        #config-panel .config-field input {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            background: #1a1a2e;
+            border: 2px solid #444;
+            border-radius: 6px;
+            color: #fff;
+        }
+        #config-panel .config-field input:focus {
+            outline: none;
+            border-color: #ffd700;
+        }
+        #config-panel .config-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        #config-panel button {
+            padding: 10px 25px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            border: 2px solid;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #config-panel .save-btn {
+            background: #ffd700;
+            border-color: #ffd700;
+            color: #16213e;
+        }
+        #config-panel .save-btn:hover {
+            background: #fff;
+            border-color: #fff;
+        }
+        #config-panel .close-btn {
+            background: transparent;
+            border-color: #888;
+            color: #888;
+        }
+        #config-panel .close-btn:hover {
+            border-color: #eee;
+            color: #eee;
+        }
+        #config-panel .config-status {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+        #config-panel .config-status.success {
+            color: #50fa7b;
+        }
+        #config-panel .config-status.error {
+            color: #e94560;
+        }
         .active-powerup {
             background: rgba(0, 0, 0, 0.7);
             border: 2px solid #ffd700;
@@ -338,6 +574,12 @@
             </div>
         </div>
         <div class="finish-instructions">Press R or triple-tap to restart, or tap on any artwork to find out more about it</div>
+        <div class="highscore-section" id="highscore-section">
+            <div class="highscore-title">LEADERBOARD</div>
+            <ul class="highscore-list" id="highscore-list">
+                <li class="highscore-item"><span class="highscore-name">Loading...</span></li>
+            </ul>
+        </div>
         <div class="loot-grid" id="loot-grid"></div>
     </div>
 
@@ -393,7 +635,42 @@
 
     <div id="active-powerups"></div>
 
-    <script>
+    <div id="name-entry-modal">
+        <div class="modal-content">
+            <div class="modal-title">HIGH SCORE!</div>
+            <div class="modal-subtitle">You made the top 25! Enter your name:</div>
+            <input type="text" id="player-name-input" maxlength="15" placeholder="Your name">
+            <div class="modal-buttons">
+                <button class="submit-btn" id="submit-name-btn">Submit</button>
+                <button class="skip-btn" id="skip-name-btn">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="config-panel">
+        <div class="config-content">
+            <div class="config-title">Leaderboard Setup</div>
+            <div class="config-desc">
+                Enter your Dreamlo codes to enable the global leaderboard.<br>
+                Get free codes at <a href="https://dreamlo.com" target="_blank">dreamlo.com</a>
+            </div>
+            <div class="config-field">
+                <label for="config-public">Public Code:</label>
+                <input type="text" id="config-public" placeholder="Your public code">
+            </div>
+            <div class="config-field">
+                <label for="config-private">Private Code:</label>
+                <input type="text" id="config-private" placeholder="Your private code">
+            </div>
+            <div class="config-buttons">
+                <button class="save-btn" id="config-save-btn">Save</button>
+                <button class="close-btn" id="config-close-btn">Close</button>
+            </div>
+            <div class="config-status" id="config-status"></div>
+        </div>
+    </div>
+
+    <script type="module">
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
         const gameOverEl = document.getElementById('game-over');
@@ -425,6 +702,226 @@
                 shield: { active: false, count: 0 }
             }
         };
+
+        // Dreamlo leaderboard configuration
+        // Uses Vite env vars (from .env locally, GitHub secrets in CI)
+        const DREAMLO_BASE_URL = 'http://www.dreamlo.com/lb';
+        const BUILD_DREAMLO_PUBLIC = import.meta.env.VITE_DREAMLO_PUBLIC_CODE || '';
+        const BUILD_DREAMLO_PRIVATE = import.meta.env.VITE_DREAMLO_PRIVATE_CODE || '';
+
+        function getDreamloPublicCode() {
+            return BUILD_DREAMLO_PUBLIC || localStorage.getItem('dreamlo_public_code') || '';
+        }
+
+        function getDreamloPrivateCode() {
+            return BUILD_DREAMLO_PRIVATE || localStorage.getItem('dreamlo_private_code') || '';
+        }
+
+        function isDreamloConfigured() {
+            return getDreamloPublicCode() && getDreamloPrivateCode();
+        }
+
+        function isUsingBuildConfig() {
+            return BUILD_DREAMLO_PUBLIC && BUILD_DREAMLO_PRIVATE;
+        }
+
+        // Config panel functionality
+        function showConfigPanel() {
+            const panel = document.getElementById('config-panel');
+            const publicInput = document.getElementById('config-public');
+            const privateInput = document.getElementById('config-private');
+            const statusEl = document.getElementById('config-status');
+
+            // Load current values
+            publicInput.value = getDreamloPublicCode();
+            privateInput.value = getDreamloPrivateCode();
+            statusEl.textContent = '';
+            statusEl.className = 'config-status';
+
+            panel.classList.add('show');
+        }
+
+        function hideConfigPanel() {
+            document.getElementById('config-panel').classList.remove('show');
+        }
+
+        function initConfigPanel() {
+            const saveBtn = document.getElementById('config-save-btn');
+            const closeBtn = document.getElementById('config-close-btn');
+            const publicInput = document.getElementById('config-public');
+            const privateInput = document.getElementById('config-private');
+            const statusEl = document.getElementById('config-status');
+
+            saveBtn.addEventListener('click', async () => {
+                const publicCode = publicInput.value.trim();
+                const privateCode = privateInput.value.trim();
+
+                if (!publicCode || !privateCode) {
+                    statusEl.textContent = 'Please enter both codes';
+                    statusEl.className = 'config-status error';
+                    return;
+                }
+
+                // Save to localStorage
+                localStorage.setItem('dreamlo_public_code', publicCode);
+                localStorage.setItem('dreamlo_private_code', privateCode);
+
+                // Test the connection
+                statusEl.textContent = 'Testing connection...';
+                statusEl.className = 'config-status';
+
+                try {
+                    const response = await fetch(`${DREAMLO_BASE_URL}/${publicCode}/json/1`);
+                    if (response.ok) {
+                        statusEl.textContent = 'Saved successfully!';
+                        statusEl.className = 'config-status success';
+                        // Refresh leaderboard cache
+                        await fetchLeaderboard();
+                        setTimeout(hideConfigPanel, 1500);
+                    } else {
+                        statusEl.textContent = 'Invalid public code';
+                        statusEl.className = 'config-status error';
+                    }
+                } catch (error) {
+                    statusEl.textContent = 'Connection failed - codes saved anyway';
+                    statusEl.className = 'config-status error';
+                }
+            });
+
+            closeBtn.addEventListener('click', hideConfigPanel);
+
+            // Check URL parameter on load (only if build config not present)
+            if (!isUsingBuildConfig()) {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('config') === 'true') {
+                    showConfigPanel();
+                }
+            }
+        }
+
+        let leaderboardCache = null;
+        let playerSubmittedScore = false;
+
+        async function fetchLeaderboard() {
+            const publicCode = getDreamloPublicCode();
+            if (!publicCode) {
+                return null; // Dreamlo not configured
+            }
+            try {
+                const response = await fetch(`${DREAMLO_BASE_URL}/${publicCode}/json/25`);
+                const data = await response.json();
+                leaderboardCache = data.dreamlo?.leaderboard?.entry || [];
+                // Ensure it's always an array (single entry comes as object)
+                if (!Array.isArray(leaderboardCache)) {
+                    leaderboardCache = [leaderboardCache];
+                }
+                return leaderboardCache;
+            } catch (error) {
+                console.error('Failed to fetch leaderboard:', error);
+                return null;
+            }
+        }
+
+        async function submitScore(name, score) {
+            const privateCode = getDreamloPrivateCode();
+            if (!privateCode) {
+                return false; // Dreamlo not configured
+            }
+            try {
+                const cleanName = name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 15) || 'Anonymous';
+                await fetch(`${DREAMLO_BASE_URL}/${privateCode}/add/${encodeURIComponent(cleanName)}/${score}`);
+                playerSubmittedScore = true;
+                // Wait a moment for Dreamlo to propagate the score
+                await new Promise(resolve => setTimeout(resolve, 500));
+                // Refresh leaderboard
+                await fetchLeaderboard();
+                return true;
+            } catch (error) {
+                console.error('Failed to submit score:', error);
+                return false;
+            }
+        }
+
+        function checkIfQualifiesForTop25(score) {
+            if (!isDreamloConfigured()) {
+                return false; // Can't qualify if leaderboard isn't set up
+            }
+            if (!leaderboardCache || leaderboardCache.length < 25) {
+                return true; // Less than 25 entries, automatically qualifies
+            }
+            // Check if score beats the lowest in top 25
+            const lowestScore = parseInt(leaderboardCache[leaderboardCache.length - 1]?.score || 0);
+            return score > lowestScore;
+        }
+
+        function displayLeaderboard(playerScore = null) {
+            const listEl = document.getElementById('highscore-list');
+            const sectionEl = document.getElementById('highscore-section');
+
+            if (!leaderboardCache || leaderboardCache.length === 0) {
+                if (!isDreamloConfigured()) {
+                    listEl.innerHTML = '<li class="highscore-item"><span class="highscore-name" style="color: #888;">Leaderboard not configured</span></li>';
+                } else {
+                    listEl.innerHTML = '<li class="highscore-item"><span class="highscore-name">No scores yet. Be the first!</span></li>';
+                }
+                return;
+            }
+
+            listEl.innerHTML = '';
+            leaderboardCache.forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.className = 'highscore-item';
+
+                // Highlight if this might be the current player's score
+                const entryScore = parseInt(entry.score);
+                if (playerScore !== null && entryScore === playerScore && playerSubmittedScore) {
+                    li.classList.add('current-player');
+                }
+
+                li.innerHTML = `
+                    <span class="highscore-rank">${index + 1}.</span>
+                    <span class="highscore-name">${entry.name}</span>
+                    <span class="highscore-score">${entry.score}</span>
+                `;
+                listEl.appendChild(li);
+            });
+        }
+
+        function showNameEntryModal(score) {
+            const modal = document.getElementById('name-entry-modal');
+            const input = document.getElementById('player-name-input');
+            const submitBtn = document.getElementById('submit-name-btn');
+            const skipBtn = document.getElementById('skip-name-btn');
+
+            modal.classList.add('show');
+            input.value = '';
+            input.focus();
+
+            const handleSubmit = async () => {
+                const name = input.value.trim() || 'Anonymous';
+                modal.classList.remove('show');
+                await submitScore(name, score);
+                displayLeaderboard(score);
+            };
+
+            const handleSkip = () => {
+                modal.classList.remove('show');
+                displayLeaderboard(score);
+            };
+
+            // Remove old listeners and add new ones
+            const newSubmitBtn = submitBtn.cloneNode(true);
+            const newSkipBtn = skipBtn.cloneNode(true);
+            submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+            skipBtn.parentNode.replaceChild(newSkipBtn, skipBtn);
+
+            newSubmitBtn.addEventListener('click', handleSubmit);
+            newSkipBtn.addEventListener('click', handleSkip);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleSubmit();
+                if (e.key === 'Escape') handleSkip();
+            });
+        }
 
         // Power-up definitions
         const POWERUP_TYPES = {
@@ -1522,10 +2019,21 @@
             themeEl.textContent = gameState.currentStyle || 'Mixed';
         }
 
-        function showFinishScreen() {
+        async function showFinishScreen() {
             document.getElementById('finish-level').textContent = gameState.level;
             document.getElementById('finish-count').textContent = gameState.stolenArtworks.length;
             document.getElementById('finish-score').textContent = gameState.score;
+
+            // Fetch and display leaderboard
+            playerSubmittedScore = false;
+            await fetchLeaderboard();
+
+            // Check if player qualifies for top 25 and has a score
+            if (gameState.score > 0 && checkIfQualifiesForTop25(gameState.score)) {
+                showNameEntryModal(gameState.score);
+            } else {
+                displayLeaderboard(gameState.score);
+            }
 
             const lootGrid = document.getElementById('loot-grid');
             lootGrid.innerHTML = '';
@@ -1997,6 +2505,7 @@
             gameLoop();
         }
 
+        initConfigPanel();
         startGame();
     </script>
 </body>

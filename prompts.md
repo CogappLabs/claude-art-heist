@@ -129,3 +129,15 @@ The tap to start does not work on the splash screen
 
 ## Prompt 39
 There is no way to restart on mobile. Add an event on the ending screen, along with the words "Press R or treple-tap to restart, or tap on any artwork to find out more about it" to appear above the list of works.
+
+## Prompt 40
+Is there any way to add a persistant highscore table both locally and on Github Pages?
+
+## Prompt 41
+please add dreamlo support, and an extra optional way to enter a name if someone gets on the top 25
+
+## Prompt 42
+Make a way for those codes to remain private but still available to Github Pages without me commiting them to the repo
+
+## Prompt 43
+Wouldn't a better way to be to use a .env file locally and GitHub Secrets for GitHub Pages?
