@@ -191,10 +191,11 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        #finish-screen .finish-footer {
+        #finish-screen .finish-instructions {
             text-align: center;
             color: #888;
-            font-size: 16px;
+            font-size: 14px;
+            margin-bottom: 20px;
         }
         #finish-screen .no-loot {
             text-align: center;
@@ -336,8 +337,8 @@
                 You reached level <span id="finish-level">1</span> and stole <span id="finish-count">0</span> artworks worth <span id="finish-score">0</span> points
             </div>
         </div>
+        <div class="finish-instructions">Press R or triple-tap to restart, or tap on any artwork to find out more about it</div>
         <div class="loot-grid" id="loot-grid"></div>
-        <div class="finish-footer">Press R to try again</div>
     </div>
 
     <div id="splash-screen">
@@ -347,8 +348,8 @@
         <div class="splash-section">
             <div class="splash-section-title">Controls</div>
             <div class="splash-controls">
-                <strong>SPACE</strong> (hold) - Angle upward<br>
-                <strong>SPACE</strong> (release) - Angle downward<br>
+                <strong>SPACE</strong> or <strong>CLICK/TAP</strong> (hold) - Angle upward<br>
+                <strong>Release</strong> - Angle downward<br>
                 <strong>R</strong> - Restart game
             </div>
         </div>
@@ -387,7 +388,7 @@
             </div>
         </div>
 
-        <div class="splash-start">Press SPACE to start</div>
+        <div class="splash-start">Press SPACE or TAP to start</div>
     </div>
 
     <div id="active-powerups"></div>
@@ -1746,17 +1747,45 @@
             drawBulkHeistEffect();
 
             // Draw guards
-            ctx.font = `${GUARD_SIZE}px Arial`;
+            const ALERT_DISTANCE = 120;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            // Fade guards when shield is active
-            if (gameState.activePowerups.shield.active) {
-                ctx.globalAlpha = 0.4;
-            }
+
             for (const guard of gameState.guards) {
+                // Check distance to player
+                const dx = gameState.playerX - guard.x;
+                const dy = gameState.playerY - guard.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const isAlert = distance < ALERT_DISTANCE && gameState.gameStarted;
+                const alertLevel = isAlert ? 1 - (distance / ALERT_DISTANCE) : 0;
+
+                ctx.save();
+
+                // Fade guards when shield is active
+                if (gameState.activePowerups.shield.active) {
+                    ctx.globalAlpha = 0.4;
+                }
+
+                // Alert glow effect
+                if (isAlert && !gameState.activePowerups.shield.active) {
+                    ctx.shadowColor = '#ff0000';
+                    ctx.shadowBlur = 15 * alertLevel;
+                }
+
+                // Draw guard (slightly larger when alert)
+                const size = GUARD_SIZE * (1 + alertLevel * 0.2);
+                ctx.font = `${size}px Arial`;
                 ctx.fillText(GUARD_EMOJI, guard.x, guard.y);
+
+                // Draw alert indicator
+                if (isAlert && !gameState.activePowerups.shield.active) {
+                    ctx.font = '16px Arial';
+                    ctx.fillStyle = `rgba(255, 50, 50, ${alertLevel})`;
+                    ctx.fillText('!', guard.x + GUARD_SIZE * 0.4, guard.y - GUARD_SIZE * 0.5);
+                }
+
+                ctx.restore();
             }
-            ctx.globalAlpha = 1;
 
             // Draw path
             if (gameState.path.length > 1) {
@@ -1847,20 +1876,7 @@
                 gameState.goingUp = true;
             }
             if (e.code === 'KeyR') {
-                gameState.level = 1;
-                gameState.score = 0;
-                gameState.usedStyles = [];
-                gameState.stolenArtworks = [];
-                gameState.activePowerups.magnet = { active: false, duration: 0 };
-                gameState.activePowerups.shield = { active: false, count: 0 };
-                particles = [];
-                screenShake = { intensity: 0, duration: 0 };
-                screenFlash = { color: null, alpha: 0 };
-                bulkHeistEffect = null;
-                hideFinishScreen();
-                stopMusic();
-                init();
-                startMusic();
+                restartGame();
             }
         });
 
@@ -1875,6 +1891,94 @@
             if (e.code === 'Space') {
                 e.preventDefault();
             }
+        });
+
+        // Touch/click controls for mobile
+        function handlePointerDown(e) {
+            e.preventDefault();
+            initAudio();
+
+            // Handle splash screen
+            if (!splashScreen.classList.contains('hidden')) {
+                hideSplashScreen();
+                startMusic();
+                return;
+            }
+
+            if (!musicPlaying && !gameState.gameOver) {
+                startMusic();
+            }
+
+            gameState.goingUp = true;
+        }
+
+        function handlePointerUp(e) {
+            if (gameState.gameStarted) {
+                gameState.goingUp = false;
+            }
+        }
+
+        // Mouse controls
+        canvas.addEventListener('mousedown', handlePointerDown);
+        canvas.addEventListener('mouseup', handlePointerUp);
+        canvas.addEventListener('mouseleave', handlePointerUp);
+
+        // Touch controls
+        canvas.addEventListener('touchstart', handlePointerDown, { passive: false });
+        canvas.addEventListener('touchend', handlePointerUp);
+        canvas.addEventListener('touchcancel', handlePointerUp);
+
+        // Prevent default touch behavior on canvas
+        canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+        // Splash screen click/touch to start
+        splashScreen.addEventListener('click', handlePointerDown);
+        splashScreen.addEventListener('touchstart', handlePointerDown, { passive: false });
+
+        // Triple-tap to restart on finish screen
+        let tapCount = 0;
+        let tapTimer = null;
+
+        function handleTripleTap() {
+            tapCount++;
+
+            if (tapTimer) clearTimeout(tapTimer);
+
+            if (tapCount >= 3) {
+                tapCount = 0;
+                restartGame();
+            } else {
+                tapTimer = setTimeout(() => {
+                    tapCount = 0;
+                }, 500);
+            }
+        }
+
+        function restartGame() {
+            gameState.level = 1;
+            gameState.score = 0;
+            gameState.usedStyles = [];
+            gameState.stolenArtworks = [];
+            gameState.activePowerups.magnet = { active: false, duration: 0 };
+            gameState.activePowerups.shield = { active: false, count: 0 };
+            particles = [];
+            screenShake = { intensity: 0, duration: 0 };
+            screenFlash = { color: null, alpha: 0 };
+            bulkHeistEffect = null;
+            hideFinishScreen();
+            stopMusic();
+            init();
+            startMusic();
+        }
+
+        finishScreenEl.addEventListener('click', (e) => {
+            // Don't trigger if clicking on an artwork link
+            if (e.target.closest('.loot-item')) return;
+            handleTripleTap();
+        });
+        finishScreenEl.addEventListener('touchend', (e) => {
+            if (e.target.closest('.loot-item')) return;
+            handleTripleTap();
         });
 
         // Start game - fetch artworks first, then initialize

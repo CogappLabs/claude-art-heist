@@ -114,3 +114,18 @@ when I have the bulk heist powerup, do some animated indication of the radius th
 
 ## Prompt 34
 only show the radius when I trigger the bulk heist powerup, and animate it to indicate that it is collecting artworks
+
+## Prompt 35
+what else could make this more fun?
+
+## Prompt 36
+Add guard reactions so that they are more alert when you are near, but don't make it too difficult
+
+## Prompt 37
+Also add touch/click controls for mobile and mouse interaction
+
+## Prompt 38
+The tap to start does not work on the splash screen
+
+## Prompt 39
+There is no way to restart on mobile. Add an event on the ending screen, along with the words "Press R or treple-tap to restart, or tap on any artwork to find out more about it" to appear above the list of works.
