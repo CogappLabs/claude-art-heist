@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Art Heist</title>
+    <title>AIC Art Heist</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
             display: flex;
             justify-content: center;
@@ -18,38 +20,45 @@
             background: #1a1a2e;
             font-family: 'Courier New', monospace;
         }
+
         #game-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 10px;
         }
+
         #game-canvas {
             border: 3px solid #e94560;
             background: #16213e;
         }
+
         #ui {
             color: #eee;
             font-size: 18px;
             display: flex;
             gap: 30px;
         }
+
         #instructions {
             color: #888;
             font-size: 14px;
             margin-top: 10px;
         }
+
         #game-over {
             display: none;
             position: absolute;
             color: #e94560;
             font-size: 48px;
             font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
+
         #game-over.show {
             display: block;
         }
+
         #toast {
             position: absolute;
             bottom: 80px;
@@ -64,25 +73,30 @@
             transition: opacity 0.3s ease;
             pointer-events: none;
         }
+
         #toast.show {
             opacity: 1;
         }
+
         #toast .toast-title {
             color: #ffd700;
             font-size: 16px;
             font-weight: bold;
             margin-bottom: 8px;
         }
+
         #toast .toast-artist {
             color: #eee;
             font-size: 14px;
             margin-bottom: 4px;
         }
+
         #toast .toast-details {
             color: #888;
             font-size: 12px;
             line-height: 1.4;
         }
+
         #toast .toast-stolen {
             color: #e94560;
             font-size: 11px;
@@ -90,6 +104,7 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
+
         #finish-screen {
             display: none;
             position: fixed;
@@ -102,26 +117,32 @@
             overflow-y: auto;
             padding: 40px 20px;
         }
+
         #finish-screen.show {
             display: block;
         }
+
         #finish-screen .finish-header {
             text-align: center;
             margin-bottom: 30px;
         }
+
         #finish-screen .finish-title {
             color: #e94560;
             font-size: 36px;
             font-weight: bold;
             margin-bottom: 10px;
         }
+
         #finish-screen .finish-stats {
             color: #888;
             font-size: 18px;
         }
+
         #finish-screen .finish-stats span {
             color: #ffd700;
         }
+
         #finish-screen .loot-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -129,6 +150,7 @@
             max-width: 1200px;
             margin: 0 auto 30px;
         }
+
         #finish-screen .loot-item {
             background: #16213e;
             border: 2px solid #ffd700;
@@ -140,11 +162,13 @@
             transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
             cursor: pointer;
         }
+
         #finish-screen .loot-item:hover {
             transform: translateY(-3px);
             border-color: #fff;
             box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
         }
+
         #finish-screen .loot-image {
             width: 100px;
             height: 100px;
@@ -152,6 +176,7 @@
             border: 2px solid #ffd700;
             flex-shrink: 0;
         }
+
         #finish-screen .loot-image-placeholder {
             width: 100px;
             height: 100px;
@@ -163,10 +188,12 @@
             font-weight: bold;
             flex-shrink: 0;
         }
+
         #finish-screen .loot-info {
             flex: 1;
             min-width: 0;
         }
+
         #finish-screen .loot-title {
             color: #ffd700;
             font-size: 14px;
@@ -174,16 +201,19 @@
             margin-bottom: 6px;
             line-height: 1.3;
         }
+
         #finish-screen .loot-artist {
             color: #eee;
             font-size: 12px;
             margin-bottom: 4px;
         }
+
         #finish-screen .loot-details {
             color: #888;
             font-size: 11px;
             line-height: 1.4;
         }
+
         #finish-screen .loot-style {
             color: #e94560;
             font-size: 10px;
@@ -191,12 +221,14 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+
         #finish-screen .finish-instructions {
             text-align: center;
             color: #888;
             font-size: 14px;
             margin-bottom: 20px;
         }
+
         #finish-screen .highscore-section {
             max-width: 400px;
             margin: 0 auto 30px;
@@ -205,6 +237,7 @@
             border-radius: 8px;
             padding: 15px;
         }
+
         #finish-screen .highscore-title {
             color: #ffd700;
             font-size: 16px;
@@ -212,11 +245,13 @@
             text-align: center;
             margin-bottom: 10px;
         }
+
         #finish-screen .highscore-list {
             list-style: none;
             padding: 0;
             margin: 0;
         }
+
         #finish-screen .highscore-item {
             display: flex;
             justify-content: space-between;
@@ -224,26 +259,32 @@
             border-bottom: 1px solid #333;
             font-size: 13px;
         }
+
         #finish-screen .highscore-item:last-child {
             border-bottom: none;
         }
+
         #finish-screen .highscore-rank {
             color: #888;
             width: 30px;
         }
+
         #finish-screen .highscore-name {
             color: #eee;
             flex: 1;
         }
+
         #finish-screen .highscore-score {
             color: #ffd700;
         }
+
         #finish-screen .highscore-item.current-player {
             background: rgba(255, 215, 0, 0.1);
             border-radius: 4px;
             padding: 5px;
             margin: -5px;
         }
+
         #name-entry-modal {
             display: none;
             position: fixed;
@@ -256,9 +297,11 @@
             align-items: center;
             justify-content: center;
         }
+
         #name-entry-modal.show {
             display: flex;
         }
+
         #name-entry-modal .modal-content {
             background: #16213e;
             border: 3px solid #ffd700;
@@ -267,17 +310,20 @@
             text-align: center;
             max-width: 400px;
         }
+
         #name-entry-modal .modal-title {
             color: #ffd700;
             font-size: 24px;
             font-weight: bold;
             margin-bottom: 10px;
         }
+
         #name-entry-modal .modal-subtitle {
             color: #eee;
             font-size: 16px;
             margin-bottom: 20px;
         }
+
         #name-entry-modal input {
             width: 100%;
             padding: 12px;
@@ -290,15 +336,18 @@
             text-align: center;
             margin-bottom: 15px;
         }
+
         #name-entry-modal input:focus {
             outline: none;
             border-color: #fff;
         }
+
         #name-entry-modal .modal-buttons {
             display: flex;
             gap: 10px;
             justify-content: center;
         }
+
         #name-entry-modal button {
             padding: 10px 25px;
             font-size: 14px;
@@ -308,30 +357,36 @@
             cursor: pointer;
             transition: all 0.2s;
         }
+
         #name-entry-modal .submit-btn {
             background: #ffd700;
             border-color: #ffd700;
             color: #16213e;
         }
+
         #name-entry-modal .submit-btn:hover {
             background: #fff;
             border-color: #fff;
         }
+
         #name-entry-modal .skip-btn {
             background: transparent;
             border-color: #888;
             color: #888;
         }
+
         #name-entry-modal .skip-btn:hover {
             border-color: #eee;
             color: #eee;
         }
+
         #finish-screen .no-loot {
             text-align: center;
             color: #888;
             font-size: 18px;
             padding: 40px;
         }
+
         #splash-screen {
             display: flex;
             position: fixed;
@@ -346,25 +401,30 @@
             justify-content: center;
             padding: 20px;
         }
+
         #splash-screen.hidden {
             display: none;
         }
+
         #splash-screen .splash-title {
             color: #e94560;
             font-size: 48px;
             font-weight: bold;
             margin-bottom: 10px;
         }
+
         #splash-screen .splash-subtitle {
             color: #ffd700;
             font-size: 18px;
             margin-bottom: 30px;
         }
+
         #splash-screen .splash-section {
             max-width: 600px;
             width: 100%;
             margin-bottom: 25px;
         }
+
         #splash-screen .splash-section-title {
             color: #e94560;
             font-size: 16px;
@@ -372,16 +432,19 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
+
         #splash-screen .splash-controls {
             color: #eee;
             font-size: 14px;
             line-height: 1.8;
         }
+
         #splash-screen .splash-powerups {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 10px;
         }
+
         #splash-screen .powerup-item {
             background: #16213e;
             border: 1px solid #333;
@@ -391,33 +454,47 @@
             align-items: center;
             gap: 10px;
         }
+
         #splash-screen .powerup-icon {
             font-size: 24px;
             width: 36px;
             text-align: center;
         }
+
         #splash-screen .powerup-info {
             flex: 1;
         }
+
         #splash-screen .powerup-name {
             color: #ffd700;
             font-size: 13px;
             font-weight: bold;
         }
+
         #splash-screen .powerup-desc {
             color: #888;
             font-size: 11px;
         }
+
         #splash-screen .splash-start {
             color: #fff;
             font-size: 20px;
             margin-top: 20px;
             animation: pulse 1.5s infinite;
         }
+
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
+
         #active-powerups {
             position: absolute;
             top: 10px;
@@ -425,6 +502,7 @@
             display: flex;
             gap: 8px;
         }
+
         #config-panel {
             display: none;
             position: fixed;
@@ -437,9 +515,11 @@
             align-items: center;
             justify-content: center;
         }
+
         #config-panel.show {
             display: flex;
         }
+
         #config-panel .config-content {
             background: #16213e;
             border: 3px solid #ffd700;
@@ -448,6 +528,7 @@
             max-width: 500px;
             width: 90%;
         }
+
         #config-panel .config-title {
             color: #ffd700;
             font-size: 24px;
@@ -455,6 +536,7 @@
             margin-bottom: 10px;
             text-align: center;
         }
+
         #config-panel .config-desc {
             color: #888;
             font-size: 14px;
@@ -462,18 +544,22 @@
             text-align: center;
             line-height: 1.5;
         }
+
         #config-panel .config-desc a {
             color: #ffd700;
         }
+
         #config-panel .config-field {
             margin-bottom: 15px;
         }
+
         #config-panel .config-field label {
             display: block;
             color: #eee;
             font-size: 14px;
             margin-bottom: 5px;
         }
+
         #config-panel .config-field input {
             width: 100%;
             padding: 10px;
@@ -484,16 +570,19 @@
             border-radius: 6px;
             color: #fff;
         }
+
         #config-panel .config-field input:focus {
             outline: none;
             border-color: #ffd700;
         }
+
         #config-panel .config-buttons {
             display: flex;
             gap: 10px;
             justify-content: center;
             margin-top: 20px;
         }
+
         #config-panel button {
             padding: 10px 25px;
             font-size: 14px;
@@ -503,35 +592,43 @@
             cursor: pointer;
             transition: all 0.2s;
         }
+
         #config-panel .save-btn {
             background: #ffd700;
             border-color: #ffd700;
             color: #16213e;
         }
+
         #config-panel .save-btn:hover {
             background: #fff;
             border-color: #fff;
         }
+
         #config-panel .close-btn {
             background: transparent;
             border-color: #888;
             color: #888;
         }
+
         #config-panel .close-btn:hover {
             border-color: #eee;
             color: #eee;
         }
+
         #config-panel .config-status {
             text-align: center;
             margin-top: 15px;
             font-size: 13px;
         }
+
         #config-panel .config-status.success {
             color: #50fa7b;
         }
+
         #config-panel .config-status.error {
             color: #e94560;
         }
+
         .active-powerup {
             background: rgba(0, 0, 0, 0.7);
             border: 2px solid #ffd700;
@@ -542,12 +639,14 @@
             align-items: center;
             gap: 5px;
         }
+
         .active-powerup .powerup-timer {
             color: #ffd700;
             font-size: 12px;
         }
     </style>
 </head>
+
 <body>
     <div id="game-container">
         <div id="ui">
@@ -563,17 +662,20 @@
             <div class="toast-details"></div>
             <div class="toast-stolen">STOLEN!</div>
         </div>
-        <div id="instructions">Hold SPACE to go up | Release to go down | Collect art (+50) | Avoid guards | Press R to restart</div>
+        <div id="instructions">Hold SPACE to go up | Release to go down | Collect art (+50) | Avoid guards | Press R to
+            restart</div>
     </div>
 
     <div id="finish-screen">
         <div class="finish-header">
             <div class="finish-title">CAUGHT!</div>
             <div class="finish-stats">
-                You reached level <span id="finish-level">1</span> and stole <span id="finish-count">0</span> artworks worth <span id="finish-score">0</span> points
+                You reached level <span id="finish-level">1</span> and stole <span id="finish-count">0</span> artworks
+                worth <span id="finish-score">0</span> points
             </div>
         </div>
-        <div class="finish-instructions">Press R or triple-tap to restart, or tap on any artwork to find out more about it</div>
+        <div class="finish-instructions">Press R or triple-tap to restart, or tap on any artwork to find out more about
+            it</div>
         <div class="highscore-section" id="highscore-section">
             <div class="highscore-title">LEADERBOARD</div>
             <ul class="highscore-list" id="highscore-list">
@@ -584,7 +686,7 @@
     </div>
 
     <div id="splash-screen">
-        <div class="splash-title">ART HEIST</div>
+        <div class="splash-title">AIC ART HEIST</div>
         <div class="splash-subtitle">Steal priceless art. Avoid the guards.</div>
 
         <div class="splash-section">
@@ -2509,4 +2611,5 @@
         startGame();
     </script>
 </body>
+
 </html>
