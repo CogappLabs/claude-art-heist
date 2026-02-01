@@ -814,7 +814,7 @@
         // Use CORS proxy on HTTPS to avoid mixed content errors (Dreamlo free plan is HTTP only)
         function proxyUrl(url) {
             if (window.location.protocol === 'https:') {
-                return 'https://corsproxy.io/?' + encodeURIComponent(url);
+                return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
             }
             return url;
         }
