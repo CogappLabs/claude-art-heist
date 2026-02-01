@@ -706,8 +706,8 @@
         // Dreamlo leaderboard configuration
         // Uses Vite env vars (from .env locally, GitHub secrets in CI)
         const DREAMLO_BASE_URL = 'http://www.dreamlo.com/lb';
-        const BUILD_DREAMLO_PUBLIC = import.meta.env.VITE_DREAMLO_PUBLIC_CODE || '';
-        const BUILD_DREAMLO_PRIVATE = import.meta.env.VITE_DREAMLO_PRIVATE_CODE || '';
+        const BUILD_DREAMLO_PUBLIC = import.meta.env?.VITE_DREAMLO_PUBLIC_CODE || '';
+        const BUILD_DREAMLO_PRIVATE = import.meta.env?.VITE_DREAMLO_PRIVATE_CODE || '';
 
         function getDreamloPublicCode() {
             return BUILD_DREAMLO_PUBLIC || localStorage.getItem('dreamlo_public_code') || '';
