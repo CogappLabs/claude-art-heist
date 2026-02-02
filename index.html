@@ -250,6 +250,21 @@
             list-style: none;
             padding: 0;
             margin: 0;
+            max-height: 150px;
+            overflow-y: auto;
+            position: relative;
+            scroll-behavior: smooth;
+        }
+        #finish-screen .highscore-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        #finish-screen .highscore-list::-webkit-scrollbar-track {
+            background: #1a1a2e;
+            border-radius: 3px;
+        }
+        #finish-screen .highscore-list::-webkit-scrollbar-thumb {
+            background: #ffd700;
+            border-radius: 3px;
         }
 
         #finish-screen .highscore-item {
@@ -279,10 +294,16 @@
         }
 
         #finish-screen .highscore-item.current-player {
-            background: rgba(255, 215, 0, 0.1);
+            background: rgba(255, 215, 0, 0.25);
             border-radius: 4px;
-            padding: 5px;
-            margin: -5px;
+            padding: 5px 8px;
+            margin: 2px -8px;
+            border: 1px solid #ffd700;
+            animation: highlight-pulse 1s ease-in-out 2;
+        }
+        @keyframes highlight-pulse {
+            0%, 100% { background: rgba(255, 215, 0, 0.25); }
+            50% { background: rgba(255, 215, 0, 0.4); }
         }
 
         #name-entry-modal {
@@ -970,14 +991,16 @@
             }
 
             listEl.innerHTML = '';
+            let currentPlayerEl = null;
             leaderboardCache.forEach((entry, index) => {
                 const li = document.createElement('li');
                 li.className = 'highscore-item';
 
                 // Highlight if this might be the current player's score
                 const entryScore = parseInt(entry.score);
-                if (playerScore !== null && entryScore === playerScore && playerSubmittedScore) {
+                if (playerScore !== null && entryScore === playerScore && playerSubmittedScore && !currentPlayerEl) {
                     li.classList.add('current-player');
+                    currentPlayerEl = li;
                 }
 
                 li.innerHTML = `
@@ -987,6 +1010,13 @@
                 `;
                 listEl.appendChild(li);
             });
+
+            // Scroll to the current player's entry after a brief delay
+            if (currentPlayerEl) {
+                setTimeout(() => {
+                    currentPlayerEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
         }
 
         function showNameEntryModal(score) {
