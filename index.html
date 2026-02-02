@@ -2156,17 +2156,6 @@
             document.getElementById('finish-count').textContent = gameState.stolenArtworks.length;
             document.getElementById('finish-score').textContent = gameState.score;
 
-            // Fetch and display leaderboard
-            playerSubmittedScore = false;
-            await fetchLeaderboard();
-
-            // Check if player qualifies for top 25 and has a score
-            if (gameState.score > 0 && checkIfQualifiesForTop25(gameState.score)) {
-                showNameEntryModal(gameState.score);
-            } else {
-                displayLeaderboard(gameState.score);
-            }
-
             const lootGrid = document.getElementById('loot-grid');
             lootGrid.innerHTML = '';
 
@@ -2208,6 +2197,17 @@
             }
 
             finishScreenEl.classList.add('show');
+
+            // Fetch and display leaderboard (after finish screen is visible)
+            playerSubmittedScore = false;
+            await fetchLeaderboard();
+
+            // Check if player qualifies for top 25 and has a score
+            if (gameState.score > 0 && checkIfQualifiesForTop25(gameState.score)) {
+                showNameEntryModal(gameState.score);
+            } else {
+                displayLeaderboard(gameState.score);
+            }
         }
 
         function hideFinishScreen() {
