@@ -2516,7 +2516,10 @@
                 gameState.goingUp = true;
             }
             if (e.code === 'KeyR') {
-                restartGame();
+                const nameModal = document.getElementById('name-entry-modal');
+                if (!nameModal.classList.contains('show')) {
+                    restartGame();
+                }
             }
         });
 
